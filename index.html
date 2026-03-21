@@ -87,6 +87,64 @@
       transition: width 0.3s;
     }
 
+    /* ── PHOTO CARD ───────────────────────────────── */
+    .photo-card {
+      border: 2px dashed #e94560;
+      background: rgba(233, 69, 96, 0.07);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 150px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      padding: 16px;
+      text-align: center;
+    }
+    .photo-card:active { transform: scale(0.97); background: rgba(233,69,96,0.15); }
+    .photo-card .photo-icon { font-size: 40px; margin-bottom: 10px; }
+    .photo-card h3 { font-size: 14px; font-weight: 700; color: #e94560; }
+    .photo-card p { font-size: 11px; color: #888; margin-top: 4px; line-height: 1.4; }
+
+    .photo-puzzle-card { position: relative; }
+    .delete-photo-btn {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: rgba(233,69,96,0.85);
+      border: none;
+      color: #fff;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10;
+    }
+
+    /* ── PROCESSING OVERLAY ───────────────────────── */
+    #processing-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      gap: 16px;
+      backdrop-filter: blur(4px);
+    }
+    #processing-overlay.show { display: flex; }
+    .spinner {
+      width: 52px; height: 52px;
+      border: 4px solid #0f3460;
+      border-top-color: #e94560;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #processing-overlay p { color: #ccc; font-size: 15px; }
+
     /* ── GAME SCREEN ──────────────────────────────── */
     #game-screen { background: #1a1a2e; }
 
@@ -265,6 +323,15 @@
   </style>
 </head>
 <body>
+
+<!-- hidden file picker -->
+<input type="file" id="photo-input" accept="image/*" style="display:none">
+
+<!-- ────── PROCESSING OVERLAY ────── -->
+<div id="processing-overlay">
+  <div class="spinner"></div>
+  <p>Converting to pixel art…</p>
+</div>
 
 <!-- ────── GALLERY SCREEN ────── -->
 <div id="gallery-screen" class="screen active">
@@ -550,12 +617,29 @@ function scaledCell() { return CELL * scale; }
 function renderGallery() {
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '';
+
+  // ── Add Photo card ──
+  const photoCard = document.createElement('div');
+  photoCard.className = 'photo-card';
+  photoCard.innerHTML = `<div class="photo-icon">📷</div><h3>Add Photo</h3><p>Turn any photo into a pixel art puzzle</p>`;
+  photoCard.onclick = () => document.getElementById('photo-input').click();
+  grid.appendChild(photoCard);
+
+  // ── All puzzles (built-in + user photos) ──
   PUZZLES.forEach(p => {
     const card = document.createElement('div');
-    card.className = 'puzzle-card';
+    card.className = 'puzzle-card' + (p.isPhoto ? ' photo-puzzle-card' : '');
     card.onclick = () => startPuzzle(p.id);
 
-    // thumbnail canvas
+    // delete button for photo puzzles
+    if (p.isPhoto) {
+      const del = document.createElement('button');
+      del.className = 'delete-photo-btn';
+      del.textContent = '×';
+      del.onclick = e => { e.stopPropagation(); deletePhotoPuzzle(p.id); };
+      card.appendChild(del);
+    }
+
     const thumbCanvas = document.createElement('canvas');
     thumbCanvas.width = p.cols;
     thumbCanvas.height = p.rows;
@@ -1095,9 +1179,176 @@ document.getElementById('back-btn').onclick = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
+//  PHOTO → PIXEL ART
+// ═══════════════════════════════════════════════════════════
+
+const PHOTO_SAVE_KEY = 'pixelcolor_photos';
+const MAX_GRID = 22;   // longest side in cells
+const NUM_COLORS = 7;  // palette size for photos
+
+// Load saved photo puzzles into PUZZLES array
+function loadPhotoPuzzles() {
+  const saved = JSON.parse(localStorage.getItem(PHOTO_SAVE_KEY) || '[]');
+  saved.forEach(p => PUZZLES.push(p));
+}
+
+function savePhotoPuzzles() {
+  const photos = PUZZLES.filter(p => p.isPhoto);
+  localStorage.setItem(PHOTO_SAVE_KEY, JSON.stringify(photos));
+}
+
+function deletePhotoPuzzle(id) {
+  const idx = PUZZLES.findIndex(p => p.id === id);
+  if (idx !== -1) PUZZLES.splice(idx, 1);
+  delete saveData[id];
+  localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  savePhotoPuzzles();
+  renderGallery();
+}
+
+// Wire up the file input
+document.getElementById('photo-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value = ''; // reset so same file can be picked again
+  if (file) processPhoto(file);
+});
+
+function processPhoto(file) {
+  const overlay = document.getElementById('processing-overlay');
+  overlay.classList.add('show');
+
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+
+    // ── 1. Resize to grid ──────────────────────────
+    const aspect = img.naturalWidth / img.naturalHeight;
+    let cols, rows;
+    if (aspect >= 1) {
+      cols = MAX_GRID;
+      rows = Math.max(4, Math.round(MAX_GRID / aspect));
+    } else {
+      rows = MAX_GRID;
+      cols = Math.max(4, Math.round(MAX_GRID * aspect));
+    }
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width = cols;
+    offscreen.height = rows;
+    const c = offscreen.getContext('2d');
+    c.drawImage(img, 0, 0, cols, rows);
+
+    // ── 2. Extract pixels ──────────────────────────
+    const imageData = c.getImageData(0, 0, cols, rows).data;
+    const pixels = [];
+    for (let i = 0; i < imageData.length; i += 4) {
+      pixels.push([imageData[i], imageData[i + 1], imageData[i + 2]]);
+    }
+
+    // ── 3. K-means quantization ────────────────────
+    const centroids = kMeansPlusPlus(pixels, NUM_COLORS);
+
+    // ── 4. Map pixels → palette indices (1-based) ──
+    const data = pixels.map(px => nearestIdx(px, centroids) + 1);
+
+    // ── 5. Build puzzle ────────────────────────────
+    const puzzle = {
+      id: 'photo_' + Date.now(),
+      name: 'My Photo',
+      emoji: '📷',
+      isPhoto: true,
+      cols,
+      rows,
+      palette: [null, ...centroids.map(rgbToHex)],
+      data,
+    };
+
+    PUZZLES.unshift(puzzle);
+    savePhotoPuzzles();
+
+    overlay.classList.remove('show');
+    startPuzzle(puzzle.id);
+  };
+
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    overlay.classList.remove('show');
+    alert('Could not load image. Please try another.');
+  };
+
+  img.src = url;
+}
+
+// ── K-Means++ initialization + clustering ─────────────────
+
+function kMeansPlusPlus(pixels, k) {
+  // Pick first centroid randomly
+  const centroids = [pixels[Math.floor(Math.random() * pixels.length)].slice()];
+
+  // Pick remaining centroids weighted by distance²
+  while (centroids.length < k) {
+    const dists = pixels.map(px => {
+      const d = Math.min(...centroids.map(c => colorDistSq(px, c)));
+      return d;
+    });
+    const total = dists.reduce((a, b) => a + b, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < pixels.length; i++) {
+      r -= dists[i];
+      if (r <= 0) { centroids.push(pixels[i].slice()); break; }
+    }
+  }
+
+  // Iterate k-means
+  for (let iter = 0; iter < 12; iter++) {
+    const sums = Array.from({ length: k }, () => [0, 0, 0]);
+    const counts = new Array(k).fill(0);
+
+    for (const px of pixels) {
+      const idx = nearestIdx(px, centroids);
+      sums[idx][0] += px[0];
+      sums[idx][1] += px[1];
+      sums[idx][2] += px[2];
+      counts[idx]++;
+    }
+
+    let moved = false;
+    for (let j = 0; j < k; j++) {
+      if (counts[j] === 0) continue;
+      const newC = sums[j].map(v => Math.round(v / counts[j]));
+      if (colorDistSq(newC, centroids[j]) > 1) moved = true;
+      centroids[j] = newC;
+    }
+    if (!moved) break;
+  }
+
+  return centroids;
+}
+
+function nearestIdx(px, centroids) {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < centroids.length; i++) {
+    const d = colorDistSq(px, centroids[i]);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+function colorDistSq([r1, g1, b1], [r2, g2, b2]) {
+  return (r1-r2)**2 + (g1-g2)**2 + (b1-b2)**2;
+}
+
+function rgbToHex([r, g, b]) {
+  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
 
+loadPhotoPuzzles();
 renderGallery();
 </script>
 </body>
