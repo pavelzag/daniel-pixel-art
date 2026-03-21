@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pixel Color</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: #1a1a2e;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── SCREENS ──────────────────────────────────── */
+    .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .screen.active { display: flex; }
+
+    /* ── GALLERY SCREEN ───────────────────────────── */
+    #gallery-screen {
+      background: #1a1a2e;
+    }
+    #gallery-header {
+      padding: 20px 16px 10px;
+      background: #16213e;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+    #gallery-header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    #gallery-header p { font-size: 12px; color: #888; margin-top: 2px; }
+
+    #gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .puzzle-card {
+      background: #16213e;
+      border-radius: 14px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.1s;
+      active-transform: scale(0.97);
+    }
+    .puzzle-card:active { transform: scale(0.97); border-color: #e94560; }
+    .puzzle-card canvas {
+      width: 100%;
+      display: block;
+      image-rendering: pixelated;
+    }
+    .puzzle-card-info {
+      padding: 10px 10px 12px;
+    }
+    .puzzle-card-info h3 { font-size: 14px; font-weight: 700; }
+    .puzzle-card-info .meta { font-size: 11px; color: #888; margin-top: 2px; }
+    .puzzle-card .progress-pill {
+      display: inline-block;
+      margin-top: 6px;
+      background: #0f3460;
+      border-radius: 20px;
+      height: 4px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .puzzle-card .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      border-radius: 20px;
+      transition: width 0.3s;
+    }
+
+    /* ── GAME SCREEN ──────────────────────────────── */
+    #game-screen { background: #1a1a2e; }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      background: #16213e;
+      gap: 8px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #back-btn {
+      background: #0f3460;
+      border: none;
+      color: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    #puzzle-title { font-size: 15px; font-weight: 700; flex: 1; }
+    #progress-text { font-size: 12px; color: #f5a623; font-weight: 600; }
+
+    #progress-bar-container { height: 3px; background: #0f3460; flex-shrink: 0; }
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      width: 0%;
+      transition: width 0.4s;
+    }
+
+    #canvas-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      touch-action: none;
+      background: #111827;
+    }
+    #game-canvas {
+      position: absolute;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    /* tool row above palette */
+    #tools {
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px 4px;
+      background: #16213e;
+      flex-shrink: 0;
+    }
+    .tool-btn {
+      background: #0f3460;
+      border: none;
+      color: #fff;
+      padding: 7px 0;
+      border-radius: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1;
+    }
+    .tool-btn .icon { font-size: 16px; }
+    .tool-btn:active { opacity: 0.7; }
+    .tool-btn.active-tool { background: #e94560; }
+
+    /* palette */
+    #palette-area {
+      background: #16213e;
+      padding: 6px 10px 10px;
+      flex-shrink: 0;
+    }
+    #palette {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      align-items: center;
+    }
+    #palette::-webkit-scrollbar { display: none; }
+
+    .color-btn {
+      flex-shrink: 0;
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      border: 3px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .color-btn:active { transform: scale(0.92); }
+    .color-btn.selected {
+      border-color: #fff;
+      transform: scale(1.12);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+    }
+    .color-btn.done { opacity: 0.5; }
+    .color-btn .num {
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8);
+      pointer-events: none;
+    }
+    .color-btn .check {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+
+    /* ── COMPLETE OVERLAY ─────────────────────────── */
+    #complete-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+    #complete-overlay.show { display: flex; }
+    .complete-box {
+      background: #16213e;
+      border-radius: 24px;
+      padding: 36px 28px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      border: 1px solid #0f3460;
+    }
+    .complete-box .emoji { font-size: 56px; margin-bottom: 12px; }
+    .complete-box h2 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .complete-box p { color: #888; font-size: 14px; margin-bottom: 24px; }
+    .complete-box canvas {
+      border-radius: 10px;
+      image-rendering: pixelated;
+      margin-bottom: 20px;
+      max-width: 160px;
+    }
+    .complete-btn {
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+    .complete-btn.secondary {
+      background: #0f3460;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ────── GALLERY SCREEN ────── -->
+<div id="gallery-screen" class="screen active">
+  <div id="gallery-header">
+    <h1>🎨 Pixel Color</h1>
+    <p>Tap a picture to start coloring</p>
+  </div>
+  <div id="gallery-grid"></div>
+</div>
+
+<!-- ────── GAME SCREEN ────── -->
+<div id="game-screen" class="screen">
+  <div id="topbar">
+    <button id="back-btn">‹</button>
+    <span id="puzzle-title">Puzzle</span>
+    <span id="progress-text">0%</span>
+  </div>
+  <div id="progress-bar-container"><div id="progress-bar"></div></div>
+
+  <div id="canvas-container">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <div id="tools">
+    <button class="tool-btn active-tool" id="tool-paint" onclick="setTool('paint')">
+      <span class="icon">✏️</span><span>Paint</span>
+    </button>
+    <button class="tool-btn" id="tool-fill" onclick="setTool('fill')">
+      <span class="icon">🪣</span><span>Fill All</span>
+    </button>
+    <button class="tool-btn" id="tool-zoom-fit" onclick="zoomFit()">
+      <span class="icon">⊞</span><span>Fit</span>
+    </button>
+    <button class="tool-btn" id="tool-undo" onclick="undo()">
+      <span class="icon">↩️</span><span>Undo</span>
+    </button>
+  </div>
+
+  <div id="palette-area">
+    <div id="palette"></div>
+  </div>
+</div>
+
+<!-- ────── COMPLETE OVERLAY ────── -->
+<div id="complete-overlay">
+  <div class="complete-box">
+    <div class="emoji">🎉</div>
+    <h2>Beautiful!</h2>
+    <p>You completed the puzzle!</p>
+    <canvas id="complete-canvas" width="160" height="160"></canvas><br>
+    <button class="complete-btn" onclick="goGallery()">More Puzzles</button>
+    <button class="complete-btn secondary" onclick="closeComplete()">Keep Looking</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  PUZZLE DATA
+// ═══════════════════════════════════════════════════════════
+
+// Each puzzle: { name, emoji, cols, rows, palette (array of hex or null for bg), data (flat array of palette indices, 0=empty) }
+
+const PUZZLES = [
+  {
+    id: 'heart',
+    name: 'Heart',
+    emoji: '❤️',
+    cols: 12, rows: 10,
+    palette: [null, '#E94560', '#FF8FAB', '#C0392B'],
+    data: [
+      0,0,1,1,0,0,0,1,1,0,0,0,
+      0,1,1,1,1,0,1,1,1,1,0,0,
+      1,1,2,1,1,1,1,1,2,1,1,0,
+      1,1,1,1,1,1,1,1,1,1,1,0,
+      1,3,1,1,1,1,1,1,1,1,1,0,
+      0,1,1,1,1,1,1,1,1,1,0,0,
+      0,0,1,1,1,1,1,1,1,0,0,0,
+      0,0,0,1,1,1,1,1,0,0,0,0,
+      0,0,0,0,1,1,1,0,0,0,0,0,
+      0,0,0,0,0,1,0,0,0,0,0,0,
+    ]
+  },
+  {
+    id: 'sun',
+    name: 'Sunny Day',
+    emoji: '☀️',
+    cols: 13, rows: 13,
+    palette: [null, '#F5A623', '#FFD700', '#FF8C00'],
+    data: [
+      0,0,0,2,0,0,1,0,0,2,0,0,0,
+      0,0,0,0,0,0,2,0,0,0,0,0,0,
+      0,2,0,0,1,1,1,1,1,0,0,2,0,
+      0,0,0,1,1,1,1,1,1,1,0,0,0,
+      0,0,1,1,1,2,1,2,1,1,1,0,0,
+      1,0,1,1,1,1,1,1,1,1,1,0,1,
+      0,2,1,1,1,1,3,1,1,1,1,2,0,
+      1,0,1,1,1,1,1,1,1,1,1,0,1,
+      0,0,1,1,1,2,1,2,1,1,1,0,0,
+      0,0,0,1,1,1,1,1,1,1,0,0,0,
+      0,2,0,0,1,1,1,1,1,0,0,2,0,
+      0,0,0,0,0,0,2,0,0,0,0,0,0,
+      0,0,0,2,0,0,1,0,0,2,0,0,0,
+    ]
+  },
+  {
+    id: 'flower',
+    name: 'Flower',
+    emoji: '🌸',
+    cols: 13, rows: 14,
+    palette: [null, '#FF69B4', '#FFEB3B', '#4CAF50', '#E91E8C'],
+    data: [
+      0,0,0,0,1,1,0,1,1,0,0,0,0,
+      0,0,0,1,1,4,1,4,1,1,0,0,0,
+      0,0,0,1,4,1,1,1,4,1,0,0,0,
+      0,0,1,1,1,1,2,1,1,1,1,0,0,
+      0,0,1,4,1,2,2,2,1,4,1,0,0,
+      0,0,1,1,1,1,2,1,1,1,1,0,0,
+      0,0,0,1,4,1,1,1,4,1,0,0,0,
+      0,0,0,1,1,4,1,4,1,1,0,0,0,
+      0,0,0,0,1,1,0,1,1,0,0,0,0,
+      0,0,0,0,0,3,3,0,0,0,0,0,0,
+      0,0,0,3,3,3,3,3,3,0,0,0,0,
+      0,0,0,3,0,0,0,0,3,0,0,0,0,
+      0,3,3,3,0,0,0,0,0,0,0,0,0,
+      0,3,0,0,0,0,0,0,0,0,0,0,0,
+    ]
+  },
+  {
+    id: 'star',
+    name: 'Shooting Star',
+    emoji: '⭐',
+    cols: 14, rows: 12,
+    palette: [null, '#FFD700', '#FFA500', '#FFFDE7'],
+    data: [
+      0,0,0,0,0,0,1,0,0,0,0,0,0,0,
+      0,0,0,0,0,1,1,1,0,0,0,0,0,0,
+      0,3,0,0,1,1,1,1,1,0,0,0,0,0,
+      0,0,0,1,1,2,1,2,1,1,0,0,3,0,
+      0,0,0,1,1,1,1,1,1,1,0,0,0,0,
+      3,0,0,0,1,1,1,1,1,0,0,0,0,3,
+      0,0,0,0,0,1,2,1,0,0,0,0,0,0,
+      0,0,0,0,2,0,0,0,2,0,0,0,0,0,
+      0,0,0,2,0,0,0,0,0,2,0,0,0,0,
+      0,0,2,0,0,0,0,0,0,0,2,0,0,0,
+      0,2,0,0,0,0,0,0,0,0,0,2,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    ]
+  },
+  {
+    id: 'rocket',
+    name: 'Rocket',
+    emoji: '🚀',
+    cols: 11, rows: 16,
+    palette: [null, '#E0E0E0', '#F44336', '#2196F3', '#FF9800', '#607D8B'],
+    data: [
+      0,0,0,0,0,3,0,0,0,0,0,
+      0,0,0,0,3,3,3,0,0,0,0,
+      0,0,0,3,3,1,3,3,0,0,0,
+      0,0,3,3,1,1,1,3,3,0,0,
+      0,0,2,2,1,1,1,2,2,0,0,
+      0,0,2,1,1,1,1,1,2,0,0,
+      0,0,2,1,3,1,3,1,2,0,0,
+      0,0,2,1,1,1,1,1,2,0,0,
+      0,5,2,2,1,1,1,2,2,5,0,
+      5,5,2,2,1,1,1,2,2,5,5,
+      5,5,2,2,2,1,2,2,2,5,5,
+      0,5,4,4,2,2,2,4,4,5,0,
+      0,0,4,4,4,4,4,4,4,0,0,
+      0,0,0,4,4,4,4,4,0,0,0,
+      0,0,0,0,4,4,4,0,0,0,0,
+      0,0,0,0,0,4,0,0,0,0,0,
+    ]
+  },
+  {
+    id: 'tree',
+    name: 'Christmas Tree',
+    emoji: '🎄',
+    cols: 13, rows: 15,
+    palette: [null, '#2E7D32', '#66BB6A', '#8D6E63', '#FFD700', '#F44336', '#FFF9C4'],
+    data: [
+      0,0,0,0,0,0,4,0,0,0,0,0,0,
+      0,0,0,0,0,1,1,1,0,0,0,0,0,
+      0,0,0,0,1,2,1,2,1,0,0,0,0,
+      0,0,0,0,1,1,5,1,1,0,0,0,0,
+      0,0,0,1,2,1,1,1,2,1,0,0,0,
+      0,0,0,1,1,5,1,5,1,1,0,0,0,
+      0,0,1,1,2,1,1,1,2,1,1,0,0,
+      0,0,1,1,1,5,1,5,1,1,1,0,0,
+      0,1,1,2,1,1,1,1,1,2,1,1,0,
+      0,1,1,1,5,1,6,1,5,1,1,1,0,
+      1,1,2,1,1,1,1,1,1,1,2,1,1,
+      0,0,0,0,0,3,3,3,0,0,0,0,0,
+      0,0,0,0,0,3,3,3,0,0,0,0,0,
+      0,0,6,6,6,6,6,6,6,6,6,0,0,
+      0,0,6,6,6,6,6,6,6,6,6,0,0,
+    ]
+  },
+  {
+    id: 'cat',
+    name: 'Cat Face',
+    emoji: '🐱',
+    cols: 12, rows: 12,
+    palette: [null, '#FF9800', '#FFF3E0', '#333333', '#FF5722'],
+    data: [
+      0,1,1,0,0,0,0,0,1,1,0,0,
+      1,1,1,1,0,0,0,1,1,1,1,0,
+      1,1,1,1,1,1,1,1,1,1,1,0,
+      1,2,1,1,1,1,1,1,1,2,1,0,
+      1,1,1,3,1,1,1,3,1,1,1,0,
+      1,2,1,1,1,1,1,1,1,2,1,0,
+      1,1,1,1,4,1,4,1,1,1,1,0,
+      1,1,1,1,1,3,1,1,1,1,1,0,
+      1,1,2,1,4,1,4,1,2,1,1,0,
+      0,1,1,1,1,1,1,1,1,1,0,0,
+      0,0,1,1,1,1,1,1,1,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,
+    ]
+  },
+  {
+    id: 'house',
+    name: 'Cozy House',
+    emoji: '🏡',
+    cols: 13, rows: 13,
+    palette: [null, '#E53935', '#EF9A9A', '#1565C0', '#FFF9C4', '#795548', '#FFCC02'],
+    data: [
+      0,0,0,0,0,1,1,1,0,0,0,0,0,
+      0,0,0,0,1,1,2,1,1,0,0,0,0,
+      0,0,0,1,1,2,2,2,1,1,0,0,0,
+      0,0,1,1,2,2,2,2,2,1,1,0,0,
+      0,1,1,2,2,2,2,2,2,2,1,1,0,
+      1,1,2,2,2,2,2,2,2,2,2,1,1,
+      3,3,3,3,3,3,3,3,3,3,3,3,3,
+      3,4,4,4,3,3,3,3,5,5,5,4,3,
+      3,4,4,4,3,3,3,3,5,6,5,4,3,
+      3,4,4,4,3,3,3,3,5,6,5,4,3,
+      3,4,4,4,3,3,3,3,5,5,5,4,3,
+      3,5,5,5,3,5,5,5,3,3,3,5,3,
+      3,5,5,5,3,5,5,5,3,3,3,5,3,
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+
+let currentPuzzle = null;
+let filled = [];          // parallel to data: which cells are user-filled
+let selectedColor = 1;    // palette index (1-based)
+let currentTool = 'paint';
+
+// viewport transform
+let scale = 1;
+let offsetX = 0;
+let offsetY = 0;
+
+// undo stack: each entry is a snapshot of filled[]
+let undoStack = [];
+
+// progress per puzzle (persist in localStorage)
+const SAVE_KEY = 'pixelcolor_progress';
+let saveData = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+
+// ═══════════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+
+const gameCanvas = document.getElementById('game-canvas');
+const ctx = gameCanvas.getContext('2d');
+const container = document.getElementById('canvas-container');
+
+const CELL = 32;      // base cell size in px (before scale)
+const GRID_LINE = 0.5;
+const FONT_THRESHOLD = 12; // show numbers when cellSize * scale > this
+
+function cellSize() { return CELL; }
+function scaledCell() { return CELL * scale; }
+
+// ═══════════════════════════════════════════════════════════
+//  GALLERY
+// ═══════════════════════════════════════════════════════════
+
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  grid.innerHTML = '';
+  PUZZLES.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'puzzle-card';
+    card.onclick = () => startPuzzle(p.id);
+
+    // thumbnail canvas
+    const thumbCanvas = document.createElement('canvas');
+    thumbCanvas.width = p.cols;
+    thumbCanvas.height = p.rows;
+    drawPuzzleToCanvas(thumbCanvas, p, saveData[p.id]);
+    card.appendChild(thumbCanvas);
+
+    const pct = getProgress(p, saveData[p.id]);
+    const info = document.createElement('div');
+    info.className = 'puzzle-card-info';
+    info.innerHTML = `
+      <h3>${p.emoji} ${p.name}</h3>
+      <div class="meta">${p.cols}×${p.rows} · ${p.palette.filter(Boolean).length} colors</div>
+      <div class="progress-pill"><div class="progress-fill" style="width:${pct}%"></div></div>
+    `;
+    card.appendChild(info);
+    grid.appendChild(card);
+  });
+}
+
+function drawPuzzleToCanvas(canvas, puzzle, savedFilled) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, canvas.width, canvas.height);
+  // light grey background
+  c.fillStyle = '#f0f0f0';
+  c.fillRect(0, 0, canvas.width, canvas.height);
+
+  const f = savedFilled || new Array(puzzle.data.length).fill(false);
+  puzzle.data.forEach((colorIdx, i) => {
+    if (colorIdx === 0) return;
+    const x = i % puzzle.cols;
+    const y = Math.floor(i / puzzle.cols);
+    const filled = f[i];
+    c.fillStyle = filled ? puzzle.palette[colorIdx] : '#ddd';
+    c.fillRect(x, y, 1, 1);
+  });
+}
+
+function getProgress(puzzle, savedFilled) {
+  if (!savedFilled) return 0;
+  const total = puzzle.data.filter(v => v !== 0).length;
+  if (total === 0) return 0;
+  const done = savedFilled.filter((f, i) => f && puzzle.data[i] !== 0).length;
+  return Math.round((done / total) * 100);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  START / LOAD PUZZLE
+// ═══════════════════════════════════════════════════════════
+
+function startPuzzle(id) {
+  currentPuzzle = PUZZLES.find(p => p.id === id);
+  if (!currentPuzzle) return;
+
+  // load saved progress or fresh
+  filled = saveData[id]
+    ? [...saveData[id]]
+    : new Array(currentPuzzle.data.length).fill(false);
+
+  undoStack = [];
+  selectedColor = 1;
+  currentTool = 'paint';
+
+  document.getElementById('puzzle-title').textContent = `${currentPuzzle.emoji} ${currentPuzzle.name}`;
+  updateToolUI();
+  buildPalette();
+  showScreen('game-screen');
+
+  // size canvas
+  gameCanvas.width = currentPuzzle.cols * CELL;
+  gameCanvas.height = currentPuzzle.rows * CELL;
+
+  zoomFit();
+  drawCanvas();
+  updateProgress();
+}
+
+function buildPalette() {
+  const palette = document.getElementById('palette');
+  palette.innerHTML = '';
+  currentPuzzle.palette.forEach((hex, i) => {
+    if (i === 0) return; // skip bg
+    const btn = document.createElement('div');
+    btn.className = 'color-btn';
+    btn.style.background = hex;
+    btn.dataset.idx = i;
+
+    const num = document.createElement('span');
+    num.className = 'num';
+    num.textContent = i;
+    btn.appendChild(num);
+
+    btn.onclick = () => selectColor(i);
+    palette.appendChild(btn);
+  });
+  selectColor(1);
+}
+
+function selectColor(idx) {
+  selectedColor = idx;
+  document.querySelectorAll('.color-btn').forEach(b => {
+    b.classList.toggle('selected', +b.dataset.idx === idx);
+  });
+  updatePaletteDone();
+}
+
+function updatePaletteDone() {
+  if (!currentPuzzle) return;
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    const idx = +btn.dataset.idx;
+    const total = currentPuzzle.data.filter(v => v === idx).length;
+    const done = filled.filter((f, i) => f && currentPuzzle.data[i] === idx).length;
+    const isDone = total > 0 && done === total;
+    btn.classList.toggle('done', isDone);
+    btn.querySelector('.num').style.display = isDone ? 'none' : 'block';
+    // check mark
+    let check = btn.querySelector('.check');
+    if (isDone) {
+      if (!check) { check = document.createElement('span'); check.className = 'check'; btn.appendChild(check); }
+      check.textContent = '✓';
+    } else if (check) {
+      check.remove();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAWING
+// ═══════════════════════════════════════════════════════════
+
+function drawCanvas() {
+  if (!currentPuzzle) return;
+  const { cols, rows, data, palette } = currentPuzzle;
+  const w = cols * CELL;
+  const h = rows * CELL;
+
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+  // background
+  ctx.fillStyle = '#f8f8f8';
+  ctx.fillRect(0, 0, w, h);
+
+  for (let i = 0; i < data.length; i++) {
+    const ci = data[i];
+    const x = (i % cols) * CELL;
+    const y = Math.floor(i / cols) * CELL;
+
+    if (ci === 0) {
+      // empty cell
+      ctx.fillStyle = '#e8e8e8';
+      ctx.fillRect(x, y, CELL, CELL);
+    } else if (filled[i]) {
+      // colored cell
+      ctx.fillStyle = palette[ci];
+      ctx.fillRect(x, y, CELL, CELL);
+      // subtle highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(x, y, CELL, CELL / 3);
+    } else {
+      // uncolored cell — show number
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(x, y, CELL, CELL);
+
+      // tint with target color at low opacity
+      ctx.fillStyle = hexToRgba(palette[ci], 0.18);
+      ctx.fillRect(x, y, CELL, CELL);
+
+      // number
+      ctx.fillStyle = '#555';
+      ctx.font = `bold ${Math.floor(CELL * 0.38)}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ci, x + CELL / 2, y + CELL / 2);
+    }
+  }
+
+  // grid lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = GRID_LINE;
+  for (let col = 0; col <= cols; col++) {
+    ctx.beginPath(); ctx.moveTo(col * CELL, 0); ctx.lineTo(col * CELL, h); ctx.stroke();
+  }
+  for (let row = 0; row <= rows; row++) {
+    ctx.beginPath(); ctx.moveTo(0, row * CELL); ctx.lineTo(w, row * CELL); ctx.stroke();
+  }
+
+  // selection highlight (selected color cells)
+  if (scaledCell() > 10) {
+    ctx.strokeStyle = hexToRgba(currentPuzzle.palette[selectedColor], 0.7);
+    ctx.lineWidth = 2;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i] === selectedColor && !filled[i]) {
+        const x = (i % cols) * CELL;
+        const y = Math.floor(i / cols) * CELL;
+        ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2);
+      }
+    }
+  }
+
+  updateTransform();
+}
+
+function updateTransform() {
+  gameCanvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+  gameCanvas.style.transformOrigin = '0 0';
+}
+
+function hexToRgba(hex, alpha) {
+  if (!hex) return `rgba(200,200,200,${alpha})`;
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ZOOM / PAN
+// ═══════════════════════════════════════════════════════════
+
+function zoomFit() {
+  if (!currentPuzzle) return;
+  const cw = container.clientWidth;
+  const ch = container.clientHeight;
+  const pw = currentPuzzle.cols * CELL;
+  const ph = currentPuzzle.rows * CELL;
+  scale = Math.min(cw / pw, ch / ph) * 0.92;
+  offsetX = (cw - pw * scale) / 2;
+  offsetY = (ch - ph * scale) / 2;
+  updateTransform();
+}
+
+function clampOffset() {
+  const cw = container.clientWidth;
+  const ch = container.clientHeight;
+  const pw = currentPuzzle.cols * CELL * scale;
+  const ph = currentPuzzle.rows * CELL * scale;
+  const minX = Math.min(0, cw - pw);
+  const minY = Math.min(0, ch - ph);
+  const maxX = Math.max(0, cw - pw);
+  const maxY = Math.max(0, ch - ph);
+  offsetX = Math.min(maxX + 40, Math.max(minX - 40, offsetX));
+  offsetY = Math.min(maxY + 40, Math.max(minY - 40, offsetY));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOUCH / POINTER INPUT
+// ═══════════════════════════════════════════════════════════
+
+let pointers = {};
+let lastPinchDist = null;
+let lastPanX = null;
+let lastPanY = null;
+let didMove = false;
+let touchStartTime = 0;
+
+container.addEventListener('pointerdown', onPointerDown, { passive: false });
+container.addEventListener('pointermove', onPointerMove, { passive: false });
+container.addEventListener('pointerup', onPointerUp, { passive: false });
+container.addEventListener('pointercancel', onPointerUp, { passive: false });
+
+function onPointerDown(e) {
+  e.preventDefault();
+  pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+  const count = Object.keys(pointers).length;
+  if (count === 1) {
+    lastPanX = e.clientX;
+    lastPanY = e.clientY;
+    didMove = false;
+    touchStartTime = Date.now();
+  }
+  if (count === 2) {
+    lastPinchDist = getPinchDist();
+    lastPanX = null;
+  }
+}
+
+function onPointerMove(e) {
+  e.preventDefault();
+  if (!pointers[e.pointerId]) return;
+  pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+
+  const count = Object.keys(pointers).length;
+
+  if (count === 2) {
+    // pinch zoom
+    const dist = getPinchDist();
+    if (lastPinchDist) {
+      const ratio = dist / lastPinchDist;
+      const center = getPinchCenter();
+      zoomAround(ratio, center.x - container.getBoundingClientRect().left, center.y - container.getBoundingClientRect().top);
+    }
+    lastPinchDist = dist;
+    didMove = true;
+    // also pan with two fingers
+    const center = getPinchCenter();
+    const cx = center.x - container.getBoundingClientRect().left;
+    const cy = center.y - container.getBoundingClientRect().top;
+    if (lastPanX !== null) {
+      offsetX += cx - lastPanX;
+      offsetY += cy - lastPanY;
+      clampOffset();
+      updateTransform();
+    }
+    lastPanX = cx;
+    lastPanY = cy;
+  } else if (count === 1) {
+    const dx = e.clientX - lastPanX;
+    const dy = e.clientY - lastPanY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      didMove = true;
+      offsetX += dx;
+      offsetY += dy;
+      clampOffset();
+      updateTransform();
+    }
+    lastPanX = e.clientX;
+    lastPanY = e.clientY;
+  }
+}
+
+function onPointerUp(e) {
+  e.preventDefault();
+  const wasDown = pointers[e.pointerId];
+  delete pointers[e.pointerId];
+  lastPinchDist = null;
+
+  const count = Object.keys(pointers).length;
+  if (count === 0 && !didMove && wasDown) {
+    // tap
+    const rect = container.getBoundingClientRect();
+    handleTap(wasDown.x - rect.left, wasDown.y - rect.top);
+  }
+  if (count === 1) {
+    // last remaining finger — reset pan ref
+    const p = Object.values(pointers)[0];
+    lastPanX = p.x;
+    lastPanY = p.y;
+  }
+}
+
+function getPinchDist() {
+  const pts = Object.values(pointers);
+  if (pts.length < 2) return 0;
+  const dx = pts[0].x - pts[1].x;
+  const dy = pts[0].y - pts[1].y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function getPinchCenter() {
+  const pts = Object.values(pointers);
+  return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+}
+
+function zoomAround(ratio, cx, cy) {
+  const newScale = Math.max(0.3, Math.min(8, scale * ratio));
+  const actualRatio = newScale / scale;
+  offsetX = cx - actualRatio * (cx - offsetX);
+  offsetY = cy - actualRatio * (cy - offsetY);
+  scale = newScale;
+  clampOffset();
+  updateTransform();
+}
+
+// mouse wheel zoom for desktop
+container.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = container.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+  const ratio = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+  zoomAround(ratio, cx, cy);
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════════
+//  TAP / PAINT
+// ═══════════════════════════════════════════════════════════
+
+function handleTap(screenX, screenY) {
+  if (!currentPuzzle) return;
+  // convert screen coords to canvas cell
+  const canvasX = (screenX - offsetX) / scale;
+  const canvasY = (screenY - offsetY) / scale;
+  const col = Math.floor(canvasX / CELL);
+  const row = Math.floor(canvasY / CELL);
+  if (col < 0 || col >= currentPuzzle.cols || row < 0 || row >= currentPuzzle.rows) return;
+
+  const idx = row * currentPuzzle.cols + col;
+  const ci = currentPuzzle.data[idx];
+  if (ci === 0) return; // empty cell
+
+  if (currentTool === 'fill') {
+    // fill all cells matching the tapped cell's color
+    selectColor(ci);
+    fillAll(ci);
+    setTool('paint'); // return to paint after fill
+  } else {
+    // paint mode: only paint if tapped cell matches selected color
+    if (ci !== selectedColor) {
+      // tap on a different color — auto-select it
+      selectColor(ci);
+      drawCanvas();
+      return;
+    }
+    if (!filled[idx]) {
+      pushUndo();
+      filled[idx] = true;
+      save();
+      drawCanvas();
+      updateProgress();
+      updatePaletteDone();
+      checkComplete();
+    }
+  }
+}
+
+function fillAll(colorIdx) {
+  const cells = currentPuzzle.data
+    .map((ci, i) => ({ ci, i }))
+    .filter(({ ci, i }) => ci === colorIdx && !filled[i]);
+  if (cells.length === 0) return;
+  pushUndo();
+  cells.forEach(({ i }) => { filled[i] = true; });
+  save();
+  drawCanvas();
+  updateProgress();
+  updatePaletteDone();
+  checkComplete();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UNDO
+// ═══════════════════════════════════════════════════════════
+
+function pushUndo() {
+  undoStack.push([...filled]);
+  if (undoStack.length > 30) undoStack.shift();
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  filled = undoStack.pop();
+  save();
+  drawCanvas();
+  updateProgress();
+  updatePaletteDone();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROGRESS
+// ═══════════════════════════════════════════════════════════
+
+function updateProgress() {
+  const total = currentPuzzle.data.filter(v => v !== 0).length;
+  const done = filled.filter((f, i) => f && currentPuzzle.data[i] !== 0).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = pct + '%';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════════════════════════════
+
+function save() {
+  saveData[currentPuzzle.id] = [...filled];
+  localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COMPLETE
+// ═══════════════════════════════════════════════════════════
+
+function checkComplete() {
+  const total = currentPuzzle.data.filter(v => v !== 0).length;
+  const done = filled.filter((f, i) => f && currentPuzzle.data[i] !== 0).length;
+  if (done >= total) {
+    setTimeout(showComplete, 400);
+  }
+}
+
+function showComplete() {
+  // draw completion image
+  const cc = document.getElementById('complete-canvas');
+  const size = 160;
+  const cellW = size / currentPuzzle.cols;
+  const cellH = size / currentPuzzle.rows;
+  cc.width = size;
+  cc.height = Math.round(cellH * currentPuzzle.rows);
+  const c = cc.getContext('2d');
+  c.fillStyle = '#f0f0f0';
+  c.fillRect(0, 0, cc.width, cc.height);
+  currentPuzzle.data.forEach((ci, i) => {
+    if (ci === 0) return;
+    c.fillStyle = currentPuzzle.palette[ci];
+    c.fillRect((i % currentPuzzle.cols) * cellW, Math.floor(i / currentPuzzle.cols) * cellH, cellW, cellH);
+  });
+
+  document.getElementById('complete-overlay').classList.add('show');
+}
+
+function closeComplete() {
+  document.getElementById('complete-overlay').classList.remove('show');
+}
+
+function goGallery() {
+  closeComplete();
+  showScreen('gallery-screen');
+  renderGallery();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOOLS
+// ═══════════════════════════════════════════════════════════
+
+function setTool(tool) {
+  currentTool = tool;
+  updateToolUI();
+}
+
+function updateToolUI() {
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active-tool'));
+  const btn = document.getElementById('tool-' + currentTool);
+  if (btn) btn.classList.add('active-tool');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCREEN NAVIGATION
+// ═══════════════════════════════════════════════════════════
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+document.getElementById('back-btn').onclick = () => {
+  showScreen('gallery-screen');
+  renderGallery();
+};
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+
+renderGallery();
+</script>
+</body>
+</html>
