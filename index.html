@@ -7,19 +7,36 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+    html {
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       background: #1a1a2e;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      height: 100dvh;
+      /* Lock the body to the viewport on all mobile browsers */
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      touch-action: none;
+      user-select: none;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      user-select: none;
     }
 
     /* ── SCREENS ──────────────────────────────────── */
-    .screen { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+    .screen {
+      display: none;
+      flex-direction: column;
+      /* Fill whatever space the body flex gives */
+      flex: 1 1 0;
+      min-height: 0;
+      overflow: hidden;
+    }
     .screen.active { display: flex; }
 
     /* ── GALLERY SCREEN ───────────────────────────── */
@@ -48,7 +65,12 @@
       gap: 12px;
       padding: 16px;
       overflow-y: auto;
-      flex: 1;
+      overflow-x: hidden;
+      flex: 1 1 0;
+      min-height: 0;
+      /* Allow only the gallery grid to scroll, nothing else */
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .puzzle-card {
@@ -183,16 +205,24 @@
     }
 
     #canvas-container {
-      flex: 1;
+      flex: 1 1 0;
+      min-height: 0;
       overflow: hidden;
       position: relative;
       touch-action: none;
       background: #111827;
+      /* Clip anything the canvas transform moves outside the box */
+      contain: strict;
     }
     #game-canvas {
       position: absolute;
+      top: 0; left: 0;
       image-rendering: pixelated;
+      image-rendering: crisp-edges;
       cursor: crosshair;
+      /* GPU layer so transform doesn't repaint surroundings */
+      will-change: transform;
+      transform-origin: 0 0;
     }
 
     /* tool row above palette */
@@ -227,14 +257,20 @@
       background: #16213e;
       padding: 6px 10px 10px;
       flex-shrink: 0;
+      /* Prevent palette from growing and pushing the canvas out */
+      overflow: hidden;
     }
     #palette {
       display: flex;
       gap: 6px;
       overflow-x: auto;
+      overflow-y: hidden;
       padding-bottom: 2px;
       scrollbar-width: none;
       align-items: center;
+      /* Allow horizontal swipe on palette without triggering page scroll */
+      touch-action: pan-x;
+      overscroll-behavior-x: contain;
     }
     #palette::-webkit-scrollbar { display: none; }
 
