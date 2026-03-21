@@ -62,8 +62,12 @@
     #gallery-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      padding: 12px;
+      /* Each row = 1/4 of the grid's own height minus padding and gaps.
+         This guarantees exactly 4 rows fit on-screen every time. */
+      grid-auto-rows: calc((100% - 28px - 42px) / 4);
+      gap: 14px;
+      padding: 14px;
+      height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
       flex: 1 1 0;
@@ -95,32 +99,32 @@
     #ptr-indicator.releasing .ptr-arrow { transform: rotate(180deg); }
 
     .puzzle-card {
-      /* Square card — on 4 columns this means 4 rows fit on any screen */
-      aspect-ratio: 1;
       background: #16213e;
-      border-radius: 10px;
+      border-radius: 12px;
       overflow: hidden;
       cursor: pointer;
-      border: 2px solid transparent;
-      transition: border-color 0.15s, transform 0.1s;
+      border: 2px solid #0f3460;
+      transition: border-color 0.15s, transform 0.12s;
       display: flex;
       flex-direction: column;
+      /* Card fills whatever height the grid row gives it */
+      height: 100%;
     }
-    .puzzle-card:active { transform: scale(0.95); border-color: #e94560; }
+    .puzzle-card:active { transform: scale(0.94); border-color: #e94560; }
 
-    /* Thumbnail fills the card, leaving room for the label strip */
+    /* Thumbnail: fills all remaining height above the label */
     .card-thumb {
       flex: 1;
       min-height: 0;
-      background: #f0f0f0;
+      background: #f5f5f5;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      padding: 6px;
     }
     .card-thumb canvas {
-      max-width: 90%;
-      max-height: 90%;
+      max-width: 100%;
+      max-height: 100%;
       width: auto;
       height: auto;
       display: block;
@@ -128,11 +132,15 @@
       image-rendering: crisp-edges;
     }
 
-    /* Compact label strip at the bottom of each card */
+    /* Fixed-height label at the bottom */
     .puzzle-card-info {
       flex-shrink: 0;
-      padding: 4px 6px 5px;
-      background: #16213e;
+      height: 28px;
+      padding: 0 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
     }
     .puzzle-card-info h3 {
       font-size: 10px;
@@ -140,11 +148,10 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      line-height: 1.2;
+      line-height: 1;
     }
     .puzzle-card-info .meta { display: none; }
     .puzzle-card .progress-pill {
-      margin-top: 3px;
       background: #0f3460;
       border-radius: 20px;
       height: 2px;
