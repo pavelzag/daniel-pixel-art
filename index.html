@@ -61,15 +61,17 @@
 
     #gallery-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      padding: 14px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 10px;
       overflow-y: auto;
       overflow-x: hidden;
       flex: 1 1 0;
       min-height: 0;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      /* align-items: start so cards don't stretch vertically within each row */
+      align-items: start;
     }
 
     /* Pull-to-refresh indicator */
@@ -96,33 +98,51 @@
 
     .puzzle-card {
       background: #16213e;
-      border-radius: 14px;
+      border-radius: 10px;
       overflow: hidden;
       cursor: pointer;
       border: 2px solid transparent;
       transition: border-color 0.15s, transform 0.1s;
-      active-transform: scale(0.97);
     }
-    .puzzle-card:active { transform: scale(0.97); border-color: #e94560; }
-    .puzzle-card canvas {
+    .puzzle-card:active { transform: scale(0.95); border-color: #e94560; }
+
+    /* Fixed-height box that holds the canvas; art scales to fit without distortion */
+    .card-thumb {
       width: 100%;
-      /* Force a tall aspect ratio so the thumbnail is large and easy to tap */
-      aspect-ratio: 1 / 1;
+      height: 80px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .card-thumb canvas {
+      /* Let canvas keep its natural pixel-art ratio, scale to fit the box */
+      max-width: 100%;
+      max-height: 80px;
+      width: auto;
+      height: auto;
       display: block;
       image-rendering: pixelated;
-      object-fit: contain;
+      image-rendering: crisp-edges;
     }
+
     .puzzle-card-info {
-      padding: 10px 10px 12px;
+      padding: 5px 6px 7px;
     }
-    .puzzle-card-info h3 { font-size: 13px; font-weight: 700; }
-    .puzzle-card-info .meta { font-size: 11px; color: #888; margin-top: 2px; }
+    .puzzle-card-info h3 {
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .puzzle-card-info .meta { display: none; }
     .puzzle-card .progress-pill {
-      display: inline-block;
-      margin-top: 6px;
+      margin-top: 4px;
       background: #0f3460;
       border-radius: 20px;
-      height: 4px;
+      height: 3px;
       width: 100%;
       overflow: hidden;
     }
@@ -135,7 +155,7 @@
 
     /* ── PHOTO SECTION (above grid, full width) ──── */
     #photo-section {
-      padding: 12px 16px 0;
+      padding: 10px 10px 0;
       flex-shrink: 0;
     }
     .photo-add-card {
@@ -158,7 +178,7 @@
     #level-tabs {
       display: flex;
       gap: 6px;
-      padding: 10px 16px 0;
+      padding: 8px 10px 0;
       flex-shrink: 0;
     }
     .level-tab {
@@ -1397,19 +1417,20 @@ function renderGallery() {
       card.appendChild(del);
     }
 
+    const thumb = document.createElement('div');
+    thumb.className = 'card-thumb';
     const thumbCanvas = document.createElement('canvas');
     thumbCanvas.width = p.cols;
     thumbCanvas.height = p.rows;
     drawPuzzleToCanvas(thumbCanvas, p, saveData[p.id]);
-    card.appendChild(thumbCanvas);
+    thumb.appendChild(thumbCanvas);
+    card.appendChild(thumb);
 
     const pct = getProgress(p, saveData[p.id]);
-    const stars = p.isPhoto ? '📷' : (LEVEL_LABEL[p.level] || '');
     const info = document.createElement('div');
     info.className = 'puzzle-card-info';
     info.innerHTML = `
       <h3>${p.emoji} ${p.name}</h3>
-      <div class="meta">${stars} &nbsp;${p.cols}×${p.rows} · ${p.palette.filter(Boolean).length} colors</div>
       <div class="progress-pill"><div class="progress-fill" style="width:${pct}%"></div></div>
     `;
     card.appendChild(info);
