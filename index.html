@@ -62,16 +62,37 @@
     #gallery-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 16px;
+      gap: 14px;
+      padding: 14px;
       overflow-y: auto;
       overflow-x: hidden;
       flex: 1 1 0;
       min-height: 0;
-      /* Allow only the gallery grid to scroll, nothing else */
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
     }
+
+    /* Pull-to-refresh indicator */
+    #ptr-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 0;
+      overflow: hidden;
+      transition: height 0.2s;
+      color: #888;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    #ptr-indicator.visible { height: 48px; }
+    #ptr-indicator.releasing { color: #e94560; }
+    .ptr-arrow {
+      font-size: 20px;
+      display: inline-block;
+      transition: transform 0.2s;
+    }
+    #ptr-indicator.releasing .ptr-arrow { transform: rotate(180deg); }
 
     .puzzle-card {
       background: #16213e;
@@ -85,13 +106,16 @@
     .puzzle-card:active { transform: scale(0.97); border-color: #e94560; }
     .puzzle-card canvas {
       width: 100%;
+      /* Force a tall aspect ratio so the thumbnail is large and easy to tap */
+      aspect-ratio: 1 / 1;
       display: block;
       image-rendering: pixelated;
+      object-fit: contain;
     }
     .puzzle-card-info {
       padding: 10px 10px 12px;
     }
-    .puzzle-card-info h3 { font-size: 14px; font-weight: 700; }
+    .puzzle-card-info h3 { font-size: 13px; font-weight: 700; }
     .puzzle-card-info .meta { font-size: 11px; color: #888; margin-top: 2px; }
     .puzzle-card .progress-pill {
       display: inline-block;
@@ -425,6 +449,7 @@
     <button class="level-tab" data-level="hard" onclick="setLevel('hard')">⭐⭐⭐ Hard</button>
   </div>
 
+  <div id="ptr-indicator"><span class="ptr-arrow">↓</span><span id="ptr-text">Pull to refresh</span></div>
   <div id="gallery-grid"></div>
 </div>
 
@@ -2080,6 +2105,60 @@ function rgbToHex([r, g, b]) {
 // ═══════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+//  PULL-TO-REFRESH
+// ═══════════════════════════════════════════════════════════
+
+(function setupPTR() {
+  const grid = document.getElementById('gallery-grid');
+  const indicator = document.getElementById('ptr-indicator');
+  const ptrText = document.getElementById('ptr-text');
+  const THRESHOLD = 72;   // px of pull needed to trigger
+  let startY = 0;
+  let pulling = false;
+  let triggered = false;
+
+  grid.addEventListener('touchstart', e => {
+    if (grid.scrollTop === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+      triggered = false;
+    }
+  }, { passive: true });
+
+  grid.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const delta = e.touches[0].clientY - startY;
+    if (delta <= 0) { pulling = false; return; }
+
+    const capped = Math.min(delta * 0.5, THRESHOLD + 16);
+    indicator.style.height = capped + 'px';
+    indicator.classList.toggle('visible', capped > 8);
+    indicator.classList.toggle('releasing', capped >= THRESHOLD);
+    ptrText.textContent = capped >= THRESHOLD ? 'Release to refresh' : 'Pull to refresh';
+  }, { passive: true });
+
+  grid.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    const h = parseFloat(indicator.style.height || 0);
+    if (h >= THRESHOLD && !triggered) {
+      triggered = true;
+      ptrText.textContent = 'Refreshing…';
+      indicator.style.height = '48px';
+      setTimeout(() => {
+        saveData = JSON.parse(localStorage.getItem(SAVE_KEY) || '{}');
+        renderGallery();
+        indicator.style.height = '0';
+        indicator.classList.remove('visible', 'releasing');
+      }, 600);
+    } else {
+      indicator.style.height = '0';
+      indicator.classList.remove('visible', 'releasing');
+    }
+  }, { passive: true });
+})();
 
 loadPhotoPuzzles();
 renderGallery();
