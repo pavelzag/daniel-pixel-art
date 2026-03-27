@@ -1,20 +1,18 @@
-const NEON_HOST = process.env.NEON_HOST;
-const NEON_USER = process.env.NEON_USER;
-const NEON_PASS = process.env.NEON_PASS;
-const NEON_DB   = process.env.NEON_DB || 'neondb';
-
-if (!NEON_HOST || !NEON_USER || !NEON_PASS) {
-  console.error('Missing Neon env vars: NEON_HOST, NEON_USER, NEON_PASS must be set');
-}
+const DATABASE_URL = process.env.DATABASE_URL;
 
 async function neonQuery(query, params = []) {
-  const connStr = `postgresql://${NEON_USER}:${NEON_PASS}@${NEON_HOST}/${NEON_DB}?sslmode=require`;
-  const res = await fetch(`https://${NEON_HOST}/sql`, {
+  if (!DATABASE_URL) throw new Error('DATABASE_URL env var is not set');
+
+  const url = new URL(DATABASE_URL);
+  const host = url.host;
+  const password = decodeURIComponent(url.password);
+
+  const res = await fetch(`https://${host}/sql`, {
     method: 'POST',
     headers: {
       'Content-Type':           'application/json',
-      'Neon-Connection-String': connStr,
-      'Neon-Password':          NEON_PASS,
+      'Neon-Connection-String': DATABASE_URL,
+      'Neon-Password':          password,
     },
     body: JSON.stringify({ query, params }),
   });
@@ -29,10 +27,6 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
-  }
-
-  if (!NEON_HOST || !NEON_USER || !NEON_PASS) {
-    return res.status(500).json({ error: 'Server misconfigured: missing Neon env vars' });
   }
 
   try {
