@@ -29,7 +29,8 @@ module.exports = async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { puzzle_id } = req.query;
+      const { searchParams } = new URL(req.url, 'http://localhost');
+      const puzzle_id = searchParams.get('puzzle_id');
       if (!puzzle_id) return res.status(400).json({ error: 'Missing puzzle_id' });
 
       const result = await neonQuery(
