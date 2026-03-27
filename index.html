@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Pixel Color</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -45,6 +45,9 @@
     }
     #gallery-header {
       padding: 20px 16px 10px;
+      padding-top: calc(20px + env(safe-area-inset-top));
+      padding-left: calc(16px + env(safe-area-inset-left));
+      padding-right: calc(16px + env(safe-area-inset-right));
       background: #16213e;
       box-shadow: 0 2px 12px rgba(0,0,0,0.4);
       flex-shrink: 0;
@@ -67,6 +70,9 @@
       grid-auto-rows: calc((100% - 28px - 42px) / 4);
       gap: 14px;
       padding: 14px;
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+      padding-left: calc(14px + env(safe-area-inset-left));
+      padding-right: calc(14px + env(safe-area-inset-right));
       height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
@@ -260,6 +266,9 @@
       display: flex;
       align-items: center;
       padding: 10px 12px;
+      padding-top: calc(10px + env(safe-area-inset-top));
+      padding-left: calc(12px + env(safe-area-inset-left));
+      padding-right: calc(12px + env(safe-area-inset-right));
       background: #16213e;
       gap: 8px;
       flex-shrink: 0;
@@ -342,6 +351,9 @@
     #palette-area {
       background: #16213e;
       padding: 6px 10px 10px;
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      padding-left: calc(10px + env(safe-area-inset-left));
+      padding-right: calc(10px + env(safe-area-inset-right));
       flex-shrink: 0;
       /* Prevent palette from growing and pushing the canvas out */
       overflow: hidden;
