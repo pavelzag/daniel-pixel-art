@@ -3808,37 +3808,16 @@ function updateTimerDisplay() {
 //  NEON LEADERBOARD
 // ═══════════════════════════════════════════════════════════
 
-const NEON_HOST = 'ep-holy-field-amn3py0b-pooler.c-5.us-east-1.aws.neon.tech';
-const NEON_USER = 'neondb_owner';
-const NEON_PASS = 'npg_8ERFLtwxUKJ9';
-const NEON_DB   = 'neondb';
-
-async function neonQuery(query, params = []) {
-  const res = await fetch(`https://${NEON_HOST}/sql`, {
-    method: 'POST',
-    headers: {
-      'Content-Type':         'application/json',
-      'Neon-Connection-String': `postgresql://${NEON_USER}:${NEON_PASS}@${NEON_HOST}/${NEON_DB}?sslmode=require`,
-      'Neon-Password':          NEON_PASS,
-    },
-    body: JSON.stringify({ query, params }),
-  });
-  if (!res.ok) throw new Error(`Neon error ${res.status}: ${await res.text()}`);
-  return res.json();
-}
-
 let lastSubmittedName = localStorage.getItem('lb_player_name') || '';
 
 async function loadLeaderboard(puzzleId) {
   const listEl = document.getElementById('leaderboard-list');
   listEl.innerHTML = '<div id="lb-loading">Loading…</div>';
   try {
-    const result = await neonQuery(
-      'SELECT player_name, time_seconds FROM leaderboard WHERE puzzle_id = $1 ORDER BY time_seconds ASC LIMIT 10',
-      [puzzleId]
-    );
-    const rows = result.rows || [];
-    if (rows.length === 0) {
+    const res = await fetch(`/api/leaderboard?puzzle_id=${encodeURIComponent(puzzleId)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const { rows } = await res.json();
+    if (!rows || rows.length === 0) {
       listEl.innerHTML = '<div id="lb-loading">No entries yet — be the first!</div>';
       return;
     }
@@ -3869,10 +3848,17 @@ async function submitScore() {
   localStorage.setItem('lb_player_name', name);
 
   try {
-    await neonQuery(
-      'INSERT INTO leaderboard (player_name, puzzle_id, puzzle_name, time_seconds) VALUES ($1, $2, $3, $4)',
-      [name, currentPuzzle.id, currentPuzzle.name, elapsedSeconds]
-    );
+    const res = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_name: name,
+        puzzle_id:   currentPuzzle.id,
+        puzzle_name: currentPuzzle.name,
+        time_seconds: elapsedSeconds,
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     btn.textContent = '✓';
     nameInput.disabled = true;
     await loadLeaderboard(currentPuzzle.id);
