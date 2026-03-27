@@ -296,6 +296,7 @@
       flex-shrink: 0;
     }
     #puzzle-title { font-size: 15px; font-weight: 700; flex: 1; }
+    #timer-display { font-size: 12px; color: #88ccff; font-weight: 600; font-variant-numeric: tabular-nums; }
     #progress-text { font-size: 12px; color: #f5a623; font-weight: 600; }
 
     #progress-bar-container { height: 3px; background: #0f3460; flex-shrink: 0; }
@@ -359,18 +360,18 @@
       background: #16213e;
       padding: 6px 10px 10px;
       flex-shrink: 0;
-      /* Prevent palette from growing and pushing the canvas out */
-      overflow: hidden;
+      overflow: visible;
+      /* Fix height so canvas doesn't get pushed */
+      min-height: 0;
     }
     #palette {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      overflow-y: hidden;
-      padding-bottom: 2px;
+      overflow-y: visible;
+      padding-bottom: 4px;
       scrollbar-width: none;
       align-items: center;
-      /* Allow horizontal swipe on palette without triggering page scroll */
       touch-action: pan-x;
       overscroll-behavior-x: contain;
     }
@@ -436,12 +437,60 @@
     }
     .complete-box .emoji { font-size: 56px; margin-bottom: 12px; }
     .complete-box h2 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
-    .complete-box p { color: #888; font-size: 14px; margin-bottom: 24px; }
+    .complete-box p { color: #888; font-size: 14px; margin-bottom: 12px; }
+    #complete-time-badge {
+      display: inline-block;
+      background: linear-gradient(90deg, #e94560, #f5a623);
+      color: #fff;
+      font-size: 20px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+      font-variant-numeric: tabular-nums;
+    }
     .complete-box canvas {
       image-rendering: pixelated;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       max-width: 160px;
     }
+    #leaderboard-entry {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    #player-name-input {
+      flex: 1;
+      background: #0f3460;
+      border: 1px solid #1e4a8a;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    #player-name-input::placeholder { color: #556; }
+    #player-name-input:focus { border-color: #e94560; }
+    #leaderboard-section {
+      margin-bottom: 10px;
+      text-align: left;
+    }
+    #leaderboard-section h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; text-align: center; }
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 3px;
+    }
+    .lb-row:nth-child(odd) { background: rgba(255,255,255,0.04); }
+    .lb-row.lb-mine { background: rgba(233,69,96,0.15); }
+    .lb-rank { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+    .lb-name { flex: 1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-time { font-variant-numeric: tabular-nums; color: #f5a623; font-weight: 700; flex-shrink: 0; }
+    #lb-loading { text-align: center; color: #666; font-size: 13px; padding: 12px 0; }
     .complete-btn {
       background: linear-gradient(90deg, #e94560, #f5a623);
       color: #fff;
@@ -454,9 +503,8 @@
       width: 100%;
       margin-bottom: 8px;
     }
-    .complete-btn.secondary {
-      background: #0f3460;
-    }
+    .complete-btn.secondary { background: #0f3460; }
+    .complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── DIFFICULTY MODAL ─────────────────────────── */
     #difficulty-modal {
@@ -599,6 +647,7 @@
   <div id="topbar">
     <button id="back-btn">‹</button>
     <span id="puzzle-title">Puzzle</span>
+    <span id="timer-display">0:00</span>
     <span id="progress-text">0%</span>
   </div>
   <div id="progress-bar-container"><div id="progress-bar"></div></div>
@@ -629,11 +678,23 @@
 
 <!-- ────── COMPLETE OVERLAY ────── -->
 <div id="complete-overlay">
-  <div class="complete-box">
+  <div class="complete-box" style="overflow-y:auto;max-height:90vh;">
     <div class="emoji">🎉</div>
     <h2>Beautiful!</h2>
-    <p>You completed the puzzle!</p>
+    <p id="complete-puzzle-name">You completed the puzzle!</p>
+    <div id="complete-time-badge">0:00</div>
     <canvas id="complete-canvas" width="160" height="160"></canvas><br>
+
+    <div id="leaderboard-entry">
+      <input type="text" id="player-name-input" placeholder="Your name" maxlength="32">
+      <button class="complete-btn" id="submit-score-btn" onclick="submitScore()" style="width:auto;padding:10px 14px;font-size:14px;margin:0;">Submit</button>
+    </div>
+
+    <div id="leaderboard-section">
+      <h3>🏆 Top Times</h3>
+      <div id="leaderboard-list"><div id="lb-loading">Loading…</div></div>
+    </div>
+
     <button class="complete-btn" onclick="goGallery()">More Puzzles</button>
     <button class="complete-btn secondary" onclick="closeComplete()">Keep Looking</button>
   </div>
@@ -2986,6 +3047,7 @@ function startPuzzle(id) {
   zoomFit();
   drawCanvas();
   updateProgress();
+  startTimer();
 }
 
 function buildPalette() {
@@ -3378,6 +3440,8 @@ function checkComplete() {
 }
 
 function showComplete() {
+  stopTimer();
+
   // draw completion image
   const cc = document.getElementById('complete-canvas');
   const { cols, rows, data, palette } = currentPuzzle;
@@ -3390,7 +3454,6 @@ function showComplete() {
     if (ci === 0) return;
     const col = i % cols;
     const row = Math.floor(i / cols);
-    // snap to integer pixels to avoid subpixel gaps between cells
     const x = Math.round(col * cc.width / cols);
     const y = Math.round(row * cc.height / rows);
     const w = Math.round((col + 1) * cc.width / cols) - x;
@@ -3399,7 +3462,20 @@ function showComplete() {
     c.fillRect(x, y, w, h);
   });
 
+  // show time
+  document.getElementById('complete-time-badge').textContent = '⏱ ' + formatTime(elapsedSeconds);
+  document.getElementById('complete-puzzle-name').textContent = `${currentPuzzle.emoji} ${currentPuzzle.name}`;
+
+  // reset submission UI
+  const nameInput = document.getElementById('player-name-input');
+  const btn = document.getElementById('submit-score-btn');
+  nameInput.value = lastSubmittedName;
+  nameInput.disabled = false;
+  btn.disabled = false;
+  btn.textContent = 'Submit';
+
   document.getElementById('complete-overlay').classList.add('show');
+  loadLeaderboard(currentPuzzle.id);
 }
 
 function closeComplete() {
@@ -3693,6 +3769,123 @@ function rgbToHex([r, g, b]) {
 
 loadPhotoPuzzles();
 renderGallery();
+
+// ═══════════════════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════════════════
+
+let timerStart = null;
+let timerInterval = null;
+let elapsedSeconds = 0;
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerStart = Date.now();
+  elapsedSeconds = 0;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    elapsedSeconds = Math.floor((Date.now() - timerStart) / 1000);
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  elapsedSeconds = Math.floor((Date.now() - timerStart) / 1000);
+}
+
+function formatTime(secs) {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-display').textContent = '⏱ ' + formatTime(elapsedSeconds);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  NEON LEADERBOARD
+// ═══════════════════════════════════════════════════════════
+
+const NEON_HOST = 'ep-holy-field-amn3py0b-pooler.c-5.us-east-1.aws.neon.tech';
+const NEON_USER = 'neondb_owner';
+const NEON_PASS = 'npg_8ERFLtwxUKJ9';
+const NEON_DB   = 'neondb';
+
+async function neonQuery(query, params = []) {
+  const res = await fetch(`https://${NEON_HOST}/sql`, {
+    method: 'POST',
+    headers: {
+      'Content-Type':         'application/json',
+      'Neon-Connection-String': `postgresql://${NEON_USER}:${NEON_PASS}@${NEON_HOST}/${NEON_DB}?sslmode=require`,
+      'Neon-Password':          NEON_PASS,
+    },
+    body: JSON.stringify({ query, params }),
+  });
+  if (!res.ok) throw new Error(`Neon error ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+let lastSubmittedName = localStorage.getItem('lb_player_name') || '';
+
+async function loadLeaderboard(puzzleId) {
+  const listEl = document.getElementById('leaderboard-list');
+  listEl.innerHTML = '<div id="lb-loading">Loading…</div>';
+  try {
+    const result = await neonQuery(
+      'SELECT player_name, time_seconds FROM leaderboard WHERE puzzle_id = $1 ORDER BY time_seconds ASC LIMIT 10',
+      [puzzleId]
+    );
+    const rows = result.rows || [];
+    if (rows.length === 0) {
+      listEl.innerHTML = '<div id="lb-loading">No entries yet — be the first!</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    listEl.innerHTML = rows.map((row, i) => {
+      const isMine = row.player_name === lastSubmittedName;
+      return `<div class="lb-row${isMine ? ' lb-mine' : ''}">
+        <span class="lb-rank">${medals[i] || (i + 1)}</span>
+        <span class="lb-name">${escHtml(row.player_name)}</span>
+        <span class="lb-time">${formatTime(row.time_seconds)}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div id="lb-loading">Could not load scores.</div>';
+    console.error(e);
+  }
+}
+
+async function submitScore() {
+  const nameInput = document.getElementById('player-name-input');
+  const btn = document.getElementById('submit-score-btn');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = '…';
+  lastSubmittedName = name;
+  localStorage.setItem('lb_player_name', name);
+
+  try {
+    await neonQuery(
+      'INSERT INTO leaderboard (player_name, puzzle_id, puzzle_name, time_seconds) VALUES ($1, $2, $3, $4)',
+      [name, currentPuzzle.id, currentPuzzle.name, elapsedSeconds]
+    );
+    btn.textContent = '✓';
+    nameInput.disabled = true;
+    await loadLeaderboard(currentPuzzle.id);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Submit';
+    console.error(e);
+  }
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
