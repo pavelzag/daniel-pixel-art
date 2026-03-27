@@ -360,16 +360,16 @@
       background: #16213e;
       padding: 6px 10px 10px;
       flex-shrink: 0;
-      overflow: visible;
-      /* Fix height so canvas doesn't get pushed */
-      min-height: 0;
+      /* Explicit height so it never collapses on mobile */
+      height: 72px;
+      box-sizing: content-box;
     }
     #palette {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      overflow-y: visible;
-      padding-bottom: 4px;
+      overflow-y: hidden;
+      padding-bottom: 2px;
       scrollbar-width: none;
       align-items: center;
       touch-action: pan-x;
