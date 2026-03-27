@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Pixel Color</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%231a1a2e'/><rect x='1' y='1' width='3' height='3' fill='%23e94560'/><rect x='5' y='1' width='3' height='3' fill='%23f5a623'/><rect x='9' y='1' width='3' height='3' fill='%234caf50'/><rect x='13' y='1' width='2' height='3' fill='%232196f3'/><rect x='1' y='5' width='3' height='3' fill='%23f5a623'/><rect x='5' y='5' width='3' height='3' fill='%23e94560'/><rect x='9' y='5' width='3' height='3' fill='%232196f3'/><rect x='13' y='5' width='2' height='3' fill='%234caf50'/><rect x='1' y='9' width='3' height='3' fill='%234caf50'/><rect x='5' y='9' width='3' height='3' fill='%232196f3'/><rect x='9' y='9' width='3' height='3' fill='%23f5a623'/><rect x='13' y='9' width='2' height='3' fill='%23e94560'/><rect x='1' y='13' width='14' height='2' fill='%230f3460'/></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -36,6 +37,8 @@
       flex: 1 1 0;
       min-height: 0;
       overflow: hidden;
+      /* Push all content above the home indicator / bottom safe area */
+      padding-bottom: env(safe-area-inset-bottom);
     }
     .screen.active { display: flex; }
 
@@ -70,9 +73,6 @@
       grid-auto-rows: calc((100% - 28px - 42px) / 4);
       gap: 14px;
       padding: 14px;
-      padding-bottom: calc(14px + env(safe-area-inset-bottom));
-      padding-left: calc(14px + env(safe-area-inset-left));
-      padding-right: calc(14px + env(safe-area-inset-right));
       height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
@@ -351,9 +351,6 @@
     #palette-area {
       background: #16213e;
       padding: 6px 10px 10px;
-      padding-bottom: calc(10px + env(safe-area-inset-bottom));
-      padding-left: calc(10px + env(safe-area-inset-left));
-      padding-right: calc(10px + env(safe-area-inset-right));
       flex-shrink: 0;
       /* Prevent palette from growing and pushing the canvas out */
       overflow: hidden;
@@ -453,6 +450,55 @@
     .complete-btn.secondary {
       background: #0f3460;
     }
+
+    /* ── DIFFICULTY MODAL ─────────────────────────── */
+    #difficulty-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 400;
+      backdrop-filter: blur(4px);
+    }
+    #difficulty-modal.show { display: flex; }
+    .difficulty-box {
+      background: #16213e;
+      border-radius: 24px;
+      padding: 28px 20px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      border: 1px solid #0f3460;
+    }
+    .difficulty-box h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .difficulty-box p { color: #888; font-size: 13px; margin-bottom: 18px; }
+    .difficulty-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .diff-btn {
+      background: #0f3460;
+      border: none;
+      color: #fff;
+      border-radius: 14px;
+      padding: 14px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.4;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .diff-btn:active { transform: scale(0.95); }
+    .diff-btn .diff-stars { font-size: 16px; display: block; margin-bottom: 4px; }
+    .diff-btn .diff-label { display: block; font-size: 14px; }
+    .diff-btn .diff-meta { display: block; font-size: 11px; color: #aaa; margin-top: 2px; font-weight: 400; }
+    .diff-btn.easy   { border: 2px solid #4CAF50; }
+    .diff-btn.medium { border: 2px solid #F5A623; }
+    .diff-btn.hard   { border: 2px solid #E94560; }
+    .diff-btn.expert { border: 2px solid #9C27B0; }
   </style>
 </head>
 <body>
@@ -464,6 +510,37 @@
 <div id="processing-overlay">
   <div class="spinner"></div>
   <p>Converting to pixel art…</p>
+</div>
+
+<!-- ────── DIFFICULTY MODAL ────── -->
+<div id="difficulty-modal">
+  <div class="difficulty-box">
+    <h2>📷 Choose Difficulty</h2>
+    <p>How detailed should your pixel art be?</p>
+    <div class="difficulty-grid">
+      <button class="diff-btn easy" onclick="startPhotoWithDifficulty('easy')">
+        <span class="diff-stars">⭐</span>
+        <span class="diff-label">Easy</span>
+        <span class="diff-meta">12 px · 5 colors</span>
+      </button>
+      <button class="diff-btn medium" onclick="startPhotoWithDifficulty('medium')">
+        <span class="diff-stars">⭐⭐</span>
+        <span class="diff-label">Medium</span>
+        <span class="diff-meta">22 px · 7 colors</span>
+      </button>
+      <button class="diff-btn hard" onclick="startPhotoWithDifficulty('hard')">
+        <span class="diff-stars">⭐⭐⭐</span>
+        <span class="diff-label">Hard</span>
+        <span class="diff-meta">36 px · 10 colors</span>
+      </button>
+      <button class="diff-btn expert" onclick="startPhotoWithDifficulty('expert')">
+        <span class="diff-stars">⭐⭐⭐⭐</span>
+        <span class="diff-label">Expert</span>
+        <span class="diff-meta">48 px · 14 colors</span>
+      </button>
+    </div>
+    <button class="complete-btn secondary" onclick="closeDifficultyModal()" style="font-size:14px;padding:10px;">Cancel</button>
+  </div>
 </div>
 
 <!-- ────── GALLERY SCREEN ────── -->
@@ -2512,17 +2589,23 @@ function checkComplete() {
 function showComplete() {
   // draw completion image
   const cc = document.getElementById('complete-canvas');
+  const { cols, rows, data, palette } = currentPuzzle;
   const size = 160;
-  const cellW = size / currentPuzzle.cols;
-  const cellH = size / currentPuzzle.rows;
   cc.width = size;
-  cc.height = Math.round(cellH * currentPuzzle.rows);
+  cc.height = Math.round(size * rows / cols);
   const c = cc.getContext('2d');
   c.clearRect(0, 0, cc.width, cc.height);
-  currentPuzzle.data.forEach((ci, i) => {
+  data.forEach((ci, i) => {
     if (ci === 0) return;
-    c.fillStyle = currentPuzzle.palette[ci];
-    c.fillRect((i % currentPuzzle.cols) * cellW, Math.floor(i / currentPuzzle.cols) * cellH, cellW, cellH);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    // snap to integer pixels to avoid subpixel gaps between cells
+    const x = Math.round(col * cc.width / cols);
+    const y = Math.round(row * cc.height / rows);
+    const w = Math.round((col + 1) * cc.width / cols) - x;
+    const h = Math.round((row + 1) * cc.height / rows) - y;
+    c.fillStyle = palette[ci];
+    c.fillRect(x, y, w, h);
   });
 
   document.getElementById('complete-overlay').classList.add('show');
@@ -2596,13 +2679,37 @@ function deletePhotoPuzzle(id) {
 }
 
 // Wire up the file input
+let pendingPhotoFile = null;
+
 document.getElementById('photo-input').addEventListener('change', e => {
   const file = e.target.files[0];
   e.target.value = ''; // reset so same file can be picked again
-  if (file) processPhoto(file);
+  if (file) {
+    pendingPhotoFile = file;
+    document.getElementById('difficulty-modal').classList.add('show');
+  }
 });
 
-function processPhoto(file) {
+const PHOTO_DIFFICULTY = {
+  easy:   { grid: 12, colors: 5 },
+  medium: { grid: 22, colors: 7 },
+  hard:   { grid: 36, colors: 10 },
+  expert: { grid: 48, colors: 14 },
+};
+
+function startPhotoWithDifficulty(level) {
+  document.getElementById('difficulty-modal').classList.remove('show');
+  const { grid, colors } = PHOTO_DIFFICULTY[level];
+  if (pendingPhotoFile) processPhoto(pendingPhotoFile, grid, colors);
+  pendingPhotoFile = null;
+}
+
+function closeDifficultyModal() {
+  document.getElementById('difficulty-modal').classList.remove('show');
+  pendingPhotoFile = null;
+}
+
+function processPhoto(file, maxGrid, numColors) {
   const overlay = document.getElementById('processing-overlay');
   overlay.classList.add('show');
 
@@ -2616,11 +2723,11 @@ function processPhoto(file) {
     const aspect = img.naturalWidth / img.naturalHeight;
     let cols, rows;
     if (aspect >= 1) {
-      cols = MAX_GRID;
-      rows = Math.max(4, Math.round(MAX_GRID / aspect));
+      cols = maxGrid;
+      rows = Math.max(4, Math.round(maxGrid / aspect));
     } else {
-      rows = MAX_GRID;
-      cols = Math.max(4, Math.round(MAX_GRID * aspect));
+      rows = maxGrid;
+      cols = Math.max(4, Math.round(maxGrid * aspect));
     }
 
     const offscreen = document.createElement('canvas');
@@ -2637,7 +2744,7 @@ function processPhoto(file) {
     }
 
     // ── 3. K-means quantization ────────────────────
-    const centroids = kMeansPlusPlus(pixels, NUM_COLORS);
+    const centroids = kMeansPlusPlus(pixels, numColors);
 
     // ── 4. Map pixels → palette indices (1-based) ──
     const data = pixels.map(px => nearestIdx(px, centroids) + 1);
