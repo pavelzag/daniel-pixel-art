@@ -3,6 +3,10 @@ const NEON_USER = process.env.NEON_USER;
 const NEON_PASS = process.env.NEON_PASS;
 const NEON_DB   = process.env.NEON_DB || 'neondb';
 
+if (!NEON_HOST || !NEON_USER || !NEON_PASS) {
+  console.error('Missing Neon env vars: NEON_HOST, NEON_USER, NEON_PASS must be set');
+}
+
 async function neonQuery(query, params = []) {
   const connStr = `postgresql://${NEON_USER}:${NEON_PASS}@${NEON_HOST}/${NEON_DB}?sslmode=require`;
   const res = await fetch(`https://${NEON_HOST}/sql`, {
@@ -25,6 +29,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  if (!NEON_HOST || !NEON_USER || !NEON_PASS) {
+    return res.status(500).json({ error: 'Server misconfigured: missing Neon env vars' });
   }
 
   try {
