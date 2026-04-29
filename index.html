@@ -67,10 +67,8 @@
 
     #gallery-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      /* Each row = 1/4 of the grid's own height minus padding and gaps.
-         This guarantees exactly 4 rows fit on-screen every time. */
-      grid-auto-rows: calc((100% - 28px - 42px) / 4);
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      grid-auto-rows: minmax(132px, 23vh);
       gap: 14px;
       padding: 14px;
       height: 100%;
@@ -192,43 +190,34 @@
     .photo-add-card h3 { font-size: 14px; font-weight: 700; color: #e94560; margin-bottom: 2px; }
     .photo-add-card p { font-size: 11px; color: #888; line-height: 1.4; }
 
-    /* ── LEVEL TABS ───────────────────────────────── */
-    #level-tabs {
-      display: flex;
-      gap: 6px;
-      padding: 8px 10px 6px;
-      flex-shrink: 0;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-x;
-      overscroll-behavior-x: contain;
-    }
-    #level-tabs::-webkit-scrollbar { display: none; }
-    .level-tab {
-      background: #0f3460;
-      border: none;
-      color: #aaa;
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-      white-space: nowrap;
-    }
-    .level-tab.active {
-      background: linear-gradient(90deg, #e94560, #f5a623);
-      color: #fff;
-    }
-
     /* ── PHOTO CARD (inside grid, for user photos) ── */
     .photo-card {
       display: none; /* no longer used in grid */
     }
 
     .photo-puzzle-card { position: relative; }
+    .source-card { position: relative; }
+    .source-card .card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      border-radius: 8px;
+      background: #0f172a;
+    }
+    .source-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(15, 52, 96, 0.92);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      z-index: 2;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.24);
+    }
     .delete-photo-btn {
       position: absolute;
       top: 6px; right: 6px;
@@ -454,6 +443,43 @@
       margin-bottom: 16px;
       max-width: 160px;
     }
+    .complete-box canvas.smoothed-preview {
+      image-rendering: auto;
+      image-rendering: smooth;
+    }
+    #complete-reveal {
+      position: relative;
+      width: min(68vw, 180px);
+      margin: 0 auto 16px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #f2f2f2;
+      box-shadow: inset 0 0 0 1px rgba(15, 52, 96, 0.65);
+    }
+    #complete-original-image,
+    #complete-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #complete-original-image {
+      object-fit: cover;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    #complete-original-image.show {
+      opacity: 1;
+    }
+    #complete-reveal.reveal-anim #complete-canvas {
+      animation: pixelRevealFade 2.1s ease forwards;
+    }
+    @keyframes pixelRevealFade {
+      0% { opacity: 1; transform: scale(1); filter: none; }
+      55% { opacity: 1; transform: scale(1); filter: none; }
+      100% { opacity: 0; transform: scale(1.05); filter: saturate(1.08); }
+    }
     #leaderboard-entry {
       display: flex;
       gap: 8px;
@@ -528,40 +554,161 @@
     }
     .difficulty-box h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
     .difficulty-box p { color: #888; font-size: 13px; margin-bottom: 18px; }
-    .difficulty-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .difficulty-preview-wrap {
+      margin: 0 auto 16px;
+      width: 150px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #0f3460;
+      border: 1px solid #1e4a8a;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.24);
+    }
+    .difficulty-preview-wrap img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      display: block;
+      background: #0b1020;
+    }
+    .difficulty-preview-canvas-wrap {
+      padding: 10px 10px 12px;
+      background: rgba(8, 18, 37, 0.72);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    #difficulty-preview-canvas {
+      width: 100%;
+      height: 110px;
+      display: block;
+      background: #eef2f7;
+      border-radius: 12px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .difficulty-preview-caption {
+      padding: 8px 10px 10px;
+      font-size: 11px;
+      color: #9fb8df;
+      line-height: 1.35;
+    }
+    .difficulty-slider-shell {
+      background: #102749;
+      border: 1px solid #1e4a8a;
+      border-radius: 18px;
+      padding: 16px 14px 14px;
       margin-bottom: 12px;
     }
-    .diff-btn {
-      background: #0f3460;
-      border: none;
-      color: #fff;
-      border-radius: 14px;
-      padding: 14px 10px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 700;
-      line-height: 1.4;
-      transition: background 0.15s, transform 0.1s;
+    #difficulty-slider {
+      width: 100%;
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      margin: 6px 0 12px;
+      touch-action: pan-x;
     }
-    .diff-btn:active { transform: scale(0.95); }
-    .diff-btn .diff-stars { font-size: 16px; display: block; margin-bottom: 4px; }
-    .diff-btn .diff-label { display: block; font-size: 14px; }
-    .diff-btn .diff-meta { display: block; font-size: 11px; color: #aaa; margin-top: 2px; font-weight: 400; }
-    .diff-btn.easy     { border: 2px solid #4CAF50; }
-    .diff-btn.medium   { border: 2px solid #F5A623; }
-    .diff-btn.hard     { border: 2px solid #E94560; }
-    .diff-btn.expert   { border: 2px solid #9C27B0; }
-    .diff-btn.extreme  { border: 2px solid #FF5722; }
-    .diff-btn.hardcore { border: 2px solid #B71C1C; }
+    #difficulty-slider::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4CAF50 0%, #F5A623 28%, #E94560 52%, #9C27B0 72%, #FF5722 88%, #B71C1C 100%);
+    }
+    #difficulty-slider::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4CAF50 0%, #F5A623 28%, #E94560 52%, #9C27B0 72%, #FF5722 88%, #B71C1C 100%);
+    }
+    #difficulty-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      border: 4px solid #e94560;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+      margin-top: -10px;
+    }
+    #difficulty-slider::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fff;
+      border: 4px solid #e94560;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+    }
+    .difficulty-current {
+      margin-bottom: 12px;
+    }
+    #difficulty-current-stars {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    #difficulty-current-label {
+      display: block;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 2px;
+    }
+    #difficulty-current-meta {
+      color: #9fb8df;
+      font-size: 12px;
+      margin-bottom: 0;
+    }
+    .difficulty-ticks {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      font-size: 10px;
+      color: #8aa5d1;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .difficulty-ticks span.active {
+      color: #fff;
+      font-weight: 700;
+    }
+    @media (max-width: 640px) {
+      #gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-auto-rows: minmax(144px, 24vh);
+        gap: 12px;
+        padding: 12px;
+      }
+      .complete-box {
+        width: calc(100vw - 24px);
+        padding: 28px 18px;
+      }
+      .difficulty-box {
+        width: calc(100vw - 24px);
+        padding: 24px 16px;
+      }
+      #leaderboard-entry {
+        flex-direction: column;
+      }
+      #leaderboard-entry .complete-btn {
+        width: 100% !important;
+      }
+    }
+    @media (min-width: 768px) {
+      #gallery-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-auto-rows: minmax(188px, 23vh);
+      }
+      .complete-box,
+      .difficulty-box {
+        max-width: 420px;
+      }
+    }
+    @media (min-width: 1100px) {
+      #gallery-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-auto-rows: minmax(204px, 24vh);
+      }
+    }
   </style>
 </head>
 <body>
 
 <!-- hidden file picker -->
-<input type="file" id="photo-input" accept="image/*" style="display:none">
+<input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none">
 
 <!-- ────── PROCESSING OVERLAY ────── -->
 <div id="processing-overlay">
@@ -572,40 +719,32 @@
 <!-- ────── DIFFICULTY MODAL ────── -->
 <div id="difficulty-modal">
   <div class="difficulty-box">
-    <h2>📷 Choose Difficulty</h2>
-    <p>How detailed should your pixel art be?</p>
-    <div class="difficulty-grid">
-      <button class="diff-btn easy" onclick="startPhotoWithDifficulty('easy')">
-        <span class="diff-stars">⭐</span>
-        <span class="diff-label">Easy</span>
-        <span class="diff-meta">12 px · 5 colors</span>
-      </button>
-      <button class="diff-btn medium" onclick="startPhotoWithDifficulty('medium')">
-        <span class="diff-stars">⭐⭐</span>
-        <span class="diff-label">Medium</span>
-        <span class="diff-meta">22 px · 7 colors</span>
-      </button>
-      <button class="diff-btn hard" onclick="startPhotoWithDifficulty('hard')">
-        <span class="diff-stars">⭐⭐⭐</span>
-        <span class="diff-label">Hard</span>
-        <span class="diff-meta">36 px · 10 colors</span>
-      </button>
-      <button class="diff-btn expert" onclick="startPhotoWithDifficulty('expert')">
-        <span class="diff-stars">⭐⭐⭐⭐</span>
-        <span class="diff-label">Expert</span>
-        <span class="diff-meta">48 px · 14 colors</span>
-      </button>
-      <button class="diff-btn extreme" onclick="startPhotoWithDifficulty('extreme')">
-        <span class="diff-stars">🔥🔥🔥</span>
-        <span class="diff-label">Extreme</span>
-        <span class="diff-meta">64 px · 64 colors</span>
-      </button>
-      <button class="diff-btn hardcore" onclick="startPhotoWithDifficulty('hardcore')">
-        <span class="diff-stars">💀💀💀</span>
-        <span class="diff-label">Hardcore</span>
-        <span class="diff-meta">80 px · 128 colors</span>
-      </button>
+    <h2 id="difficulty-title">Choose Difficulty</h2>
+    <p id="difficulty-subtitle">How detailed should your pixel art be?</p>
+    <div class="difficulty-preview-wrap" id="difficulty-preview-wrap" style="display:none;">
+      <img id="difficulty-preview-image" alt="Challenge preview">
+      <div class="difficulty-preview-canvas-wrap">
+        <canvas id="difficulty-preview-canvas" width="150" height="110"></canvas>
+      </div>
+      <div class="difficulty-preview-caption" id="difficulty-preview-caption"></div>
     </div>
+    <div class="difficulty-slider-shell">
+      <div class="difficulty-current">
+        <span id="difficulty-current-stars">⭐⭐</span>
+        <strong id="difficulty-current-label">Medium</strong>
+        <p id="difficulty-current-meta">22 px grid · 7 colors</p>
+      </div>
+      <input type="range" id="difficulty-slider" min="0" max="5" step="1" value="1" oninput="updateDifficultySelection()">
+      <div class="difficulty-ticks" id="difficulty-ticks">
+        <span>Easy</span>
+        <span>Medium</span>
+        <span>Hard</span>
+        <span>Expert</span>
+        <span>Extreme</span>
+        <span>Hardcore</span>
+      </div>
+    </div>
+    <button class="complete-btn" onclick="chooseDifficulty()">Start Challenge</button>
     <button class="complete-btn secondary" onclick="closeDifficultyModal()" style="font-size:14px;padding:10px;">Cancel</button>
   </div>
 </div>
@@ -622,20 +761,10 @@
     <div class="photo-add-card" onclick="document.getElementById('photo-input').click()">
       <div class="photo-icon">📷</div>
       <div>
-        <h3>Add Your Photo</h3>
-        <p>Turn any photo into a pixel art puzzle</p>
+        <h3>Take or Add Photo</h3>
+        <p>Use the camera or library, then pick a difficulty</p>
       </div>
     </div>
-  </div>
-
-  <!-- Level filter tabs -->
-  <div id="level-tabs">
-    <button class="level-tab active" data-level="all" onclick="setLevel('all')">All</button>
-    <button class="level-tab" data-level="easy" onclick="setLevel('easy')">⭐ Easy</button>
-    <button class="level-tab" data-level="medium" onclick="setLevel('medium')">⭐⭐ Medium</button>
-    <button class="level-tab" data-level="hard" onclick="setLevel('hard')">⭐⭐⭐ Hard</button>
-    <button class="level-tab" data-level="extreme" onclick="setLevel('extreme')">🔥 Extreme</button>
-    <button class="level-tab" data-level="hardcore" onclick="setLevel('hardcore')">💀 Hardcore</button>
   </div>
 
   <div id="ptr-indicator"><span class="ptr-arrow">↓</span><span id="ptr-text">Pull to refresh</span></div>
@@ -695,6 +824,7 @@
       <div id="leaderboard-list"><div id="lb-loading">Loading…</div></div>
     </div>
 
+    <button class="complete-btn secondary" onclick="restartCurrentPuzzle()">Restart Puzzle</button>
     <button class="complete-btn" onclick="goGallery()">More Puzzles</button>
     <button class="complete-btn secondary" onclick="closeComplete()">Keep Looking</button>
   </div>
@@ -933,6 +1063,7 @@ const PUZZLES = [
     name: 'Cat Face',
     emoji: '🐱',
     level: 'easy',
+    completionStyle: 'smooth',
     cols: 24, rows: 24,
     palette: [null,"#FF9800","#FFF3E0","#333333","#FF5722"],
     data: [
@@ -2898,6 +3029,175 @@ const PUZZLES = [
   }
 ];
 
+const DIFFICULTY_OPTIONS = {
+  easy:     { label: 'Easy',     stars: '⭐',     grid: 12, colors: 5   },
+  medium:   { label: 'Medium',   stars: '⭐⭐',    grid: 22, colors: 7   },
+  hard:     { label: 'Hard',     stars: '⭐⭐⭐',   grid: 36, colors: 10  },
+  expert:   { label: 'Expert',   stars: '⭐⭐⭐⭐',  grid: 48, colors: 14  },
+  extreme:  { label: 'Extreme',  stars: '🔥🔥🔥', grid: 64, colors: 64  },
+  hardcore: { label: 'Hardcore', stars: '💀💀💀', grid: 80, colors: 128 },
+};
+
+const DIFFICULTY_ORDER = ['easy', 'medium', 'hard', 'expert', 'extreme', 'hardcore'];
+
+function svgDataUri(svg) {
+  return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg.trim());
+}
+
+function buildIllustration({ background, content, defs = '' }) {
+  return svgDataUri(`
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="${background[0]}"/>
+          <stop offset="100%" stop-color="${background[1]}"/>
+        </linearGradient>
+        ${defs}
+      </defs>
+      <rect width="512" height="512" rx="48" fill="url(#bg)"/>
+      ${content}
+    </svg>
+  `);
+}
+
+function createFruitArt({ id, name, emoji, background, body, accent, leaf, kind }) {
+  const shapes = {
+    apple: `
+      <ellipse cx="256" cy="298" rx="132" ry="146" fill="${body}"/>
+      <ellipse cx="308" cy="266" rx="44" ry="52" fill="${accent}" opacity="0.32"/>
+      <path d="M252 160 C248 128 268 108 300 98" stroke="#5a3418" stroke-width="18" stroke-linecap="round" fill="none"/>
+      <path d="M278 110 C334 112 364 154 332 190 C286 182 266 152 278 110 Z" fill="${leaf}"/>
+    `,
+    pear: `
+      <path d="M258 146 C330 146 366 208 338 266 C388 298 388 390 256 412 C124 390 124 298 174 266 C146 208 182 146 258 146 Z" fill="${body}"/>
+      <ellipse cx="300" cy="230" rx="36" ry="72" fill="${accent}" opacity="0.28"/>
+      <path d="M254 148 C250 122 260 102 286 88" stroke="#6b4620" stroke-width="16" stroke-linecap="round" fill="none"/>
+      <ellipse cx="312" cy="98" rx="48" ry="24" transform="rotate(24 312 98)" fill="${leaf}"/>
+    `,
+    orange: `
+      <circle cx="256" cy="274" r="144" fill="${body}"/>
+      <circle cx="312" cy="228" r="40" fill="${accent}" opacity="0.28"/>
+      <path d="M250 138 C246 112 258 98 284 88" stroke="#6c471f" stroke-width="16" stroke-linecap="round" fill="none"/>
+      <path d="M272 100 C324 104 342 150 304 176 C266 168 252 132 272 100 Z" fill="${leaf}"/>
+    `,
+    lemon: `
+      <path d="M138 280 C168 176 346 142 396 250 C434 334 338 414 238 404 C162 396 110 338 138 280 Z" fill="${body}"/>
+      <path d="M350 216 C388 248 394 318 362 360" stroke="${accent}" stroke-width="26" stroke-linecap="round" opacity="0.34"/>
+      <ellipse cx="202" cy="180" rx="46" ry="18" transform="rotate(-22 202 180)" fill="${leaf}"/>
+    `,
+    strawberry: `
+      <path d="M256 152 C348 154 392 242 362 322 C336 392 294 420 256 426 C218 420 176 392 150 322 C120 242 164 154 256 152 Z" fill="${body}"/>
+      <path d="M178 172 C204 122 240 118 256 156 C272 118 308 122 334 172 C292 196 220 196 178 172 Z" fill="${leaf}"/>
+      <g fill="${accent}">
+        <circle cx="214" cy="246" r="8"/><circle cx="260" cy="222" r="8"/><circle cx="304" cy="254" r="8"/>
+        <circle cx="196" cy="296" r="8"/><circle cx="246" cy="288" r="8"/><circle cx="296" cy="304" r="8"/>
+        <circle cx="230" cy="348" r="8"/><circle cx="282" cy="350" r="8"/>
+      </g>
+    `,
+    cherries: `
+      <path d="M214 144 C226 96 258 84 292 86" stroke="#6b4620" stroke-width="16" fill="none" stroke-linecap="round"/>
+      <path d="M300 144 C288 96 258 84 220 82" stroke="#6b4620" stroke-width="16" fill="none" stroke-linecap="round"/>
+      <circle cx="204" cy="296" r="96" fill="${body}"/>
+      <circle cx="316" cy="310" r="92" fill="${accent}"/>
+      <circle cx="178" cy="266" r="22" fill="rgba(255,255,255,0.18)"/>
+      <circle cx="288" cy="282" r="20" fill="rgba(255,255,255,0.18)"/>
+      <ellipse cx="288" cy="106" rx="52" ry="24" transform="rotate(-18 288 106)" fill="${leaf}"/>
+    `,
+    watermelon: `
+      <path d="M110 320 C128 198 214 128 332 128 C408 128 448 206 402 330 C348 386 176 392 110 320 Z" fill="${body}"/>
+      <path d="M118 318 C176 372 342 370 396 326" stroke="${accent}" stroke-width="34" stroke-linecap="round" fill="none"/>
+      <g fill="#2f201d">
+        <ellipse cx="206" cy="256" rx="8" ry="14"/><ellipse cx="252" cy="230" rx="8" ry="14"/>
+        <ellipse cx="300" cy="250" rx="8" ry="14"/><ellipse cx="346" cy="280" rx="8" ry="14"/>
+      </g>
+    `,
+    pineapple: `
+      <path d="M256 154 L320 204 L346 322 L256 410 L166 322 L192 204 Z" fill="${body}"/>
+      <path d="M194 204 L318 204 M180 252 L332 252 M170 300 L342 300" stroke="${accent}" stroke-width="14" opacity="0.45"/>
+      <path d="M214 170 L298 394 M298 170 L214 394" stroke="${accent}" stroke-width="12" opacity="0.36"/>
+      <path d="M256 88 L212 156 L246 164 L198 208 L256 182 L314 208 L266 164 L300 156 Z" fill="${leaf}"/>
+    `,
+  };
+  return { id, name, emoji, type: 'source', src: buildIllustration({ background, content: shapes[kind] }) };
+}
+
+function createVehicleArt({ id, name, emoji, background, body, accent, trim, kind }) {
+  const ground = `<rect x="0" y="372" width="512" height="140" fill="${trim}" opacity="0.22"/>`;
+  const shapes = {
+    car: `${ground}<rect x="110" y="256" width="292" height="94" rx="42" fill="${body}"/><path d="M168 256 L226 198 H332 L386 256 Z" fill="${accent}"/><circle cx="184" cy="356" r="34" fill="#1a1a2e"/><circle cx="330" cy="356" r="34" fill="#1a1a2e"/><circle cx="184" cy="356" r="16" fill="#d9e6ff"/><circle cx="330" cy="356" r="16" fill="#d9e6ff"/><rect x="234" y="214" width="96" height="46" rx="14" fill="${trim}" opacity="0.7"/>`,
+    bus: `${ground}<rect x="84" y="210" width="344" height="132" rx="28" fill="${body}"/><rect x="110" y="232" width="218" height="54" rx="14" fill="${accent}"/><rect x="340" y="232" width="56" height="88" rx="14" fill="${trim}" opacity="0.8"/><circle cx="160" cy="350" r="30" fill="#1a1a2e"/><circle cx="352" cy="350" r="30" fill="#1a1a2e"/><circle cx="160" cy="350" r="14" fill="#d9e6ff"/><circle cx="352" cy="350" r="14" fill="#d9e6ff"/>`,
+    truck: `${ground}<rect x="76" y="248" width="228" height="92" rx="24" fill="${body}"/><path d="M304 340 V226 H368 L424 280 V340 Z" fill="${accent}"/><rect x="330" y="240" width="40" height="38" rx="10" fill="${trim}" opacity="0.75"/><circle cx="156" cy="348" r="32" fill="#1a1a2e"/><circle cx="324" cy="348" r="32" fill="#1a1a2e"/><circle cx="398" cy="348" r="32" fill="#1a1a2e"/><circle cx="156" cy="348" r="15" fill="#d9e6ff"/><circle cx="324" cy="348" r="15" fill="#d9e6ff"/><circle cx="398" cy="348" r="15" fill="#d9e6ff"/>`,
+    scooter: `${ground}<rect x="176" y="246" width="172" height="82" rx="36" fill="${body}"/><rect x="242" y="166" width="22" height="90" rx="10" fill="${accent}"/><rect x="242" y="156" width="74" height="16" rx="8" fill="${accent}"/><circle cx="200" cy="350" r="36" fill="#1a1a2e"/><circle cx="352" cy="350" r="36" fill="#1a1a2e"/><circle cx="200" cy="350" r="16" fill="#d9e6ff"/><circle cx="352" cy="350" r="16" fill="#d9e6ff"/><circle cx="322" cy="256" r="34" fill="${trim}" opacity="0.65"/>`,
+    sailboat: `<rect x="0" y="320" width="512" height="192" fill="${trim}" opacity="0.26"/><path d="M102 324 H410 L360 384 H154 Z" fill="${body}"/><rect x="250" y="124" width="14" height="194" rx="7" fill="${accent}"/><path d="M250 132 L162 296 H250 Z" fill="${accent}" opacity="0.92"/><path d="M264 148 L364 282 H264 Z" fill="${body}" opacity="0.82"/><circle cx="392" cy="118" r="34" fill="rgba(255,255,255,0.28)"/>`,
+    airplane: `<path d="M98 286 H240 L308 170 H366 L334 286 H432 C448 286 462 298 462 314 C462 330 448 342 432 342 H334 L366 452 H308 L240 342 H98 C78 342 60 330 60 314 C60 298 78 286 98 286 Z" fill="${body}"/><rect x="286" y="212" width="72" height="24" rx="12" fill="${accent}" opacity="0.82"/><circle cx="182" cy="314" r="16" fill="${trim}" opacity="0.38"/>`,
+    helicopter: `<ellipse cx="258" cy="286" rx="122" ry="74" fill="${body}"/><rect x="110" y="278" width="80" height="24" rx="12" fill="${accent}"/><rect x="350" y="254" width="110" height="18" rx="9" fill="${accent}"/><circle cx="358" cy="322" r="18" fill="${trim}" opacity="0.65"/><rect x="232" y="154" width="22" height="82" rx="11" fill="${accent}"/><rect x="158" y="142" width="198" height="14" rx="7" fill="${accent}"/><rect x="148" y="350" width="224" height="12" rx="6" fill="${trim}" opacity="0.8"/><rect x="182" y="366" width="156" height="10" rx="5" fill="${trim}" opacity="0.65"/>`,
+    train: `${ground}<rect x="88" y="188" width="336" height="160" rx="34" fill="${body}"/><rect x="126" y="222" width="78" height="50" rx="14" fill="${accent}"/><rect x="218" y="222" width="78" height="50" rx="14" fill="${accent}"/><rect x="310" y="222" width="78" height="50" rx="14" fill="${accent}"/><circle cx="176" cy="352" r="28" fill="#1a1a2e"/><circle cx="338" cy="352" r="28" fill="#1a1a2e"/><rect x="148" y="168" width="214" height="22" rx="11" fill="${trim}" opacity="0.72"/>`,
+  };
+  return { id, name, emoji, type: 'source', src: buildIllustration({ background, content: shapes[kind] }) };
+}
+
+function createAnimalArt({ id, name, emoji, background, fur, accent, detail, kind }) {
+  const shapes = {
+    cat: `<path d="M132 152 L198 212 H150 Z" fill="${fur}"/><path d="M380 152 L362 212 H314 Z" fill="${fur}"/><circle cx="256" cy="286" r="142" fill="${fur}"/><circle cx="204" cy="270" r="18" fill="${detail}"/><circle cx="308" cy="270" r="18" fill="${detail}"/><path d="M242 322 L270 322 L256 344 Z" fill="${accent}"/><path d="M182 354 Q256 388 330 354" stroke="${detail}" stroke-width="14" stroke-linecap="round" fill="none"/>`,
+    dog: `<path d="M146 190 Q126 112 190 164" fill="${accent}"/><path d="M366 190 Q386 112 322 164" fill="${accent}"/><circle cx="256" cy="286" r="146" fill="${fur}"/><circle cx="208" cy="272" r="18" fill="${detail}"/><circle cx="304" cy="272" r="18" fill="${detail}"/><ellipse cx="256" cy="330" rx="44" ry="32" fill="${accent}"/><circle cx="240" cy="324" r="10" fill="${detail}"/><circle cx="272" cy="324" r="10" fill="${detail}"/>`,
+    owl: `<circle cx="256" cy="286" r="144" fill="${fur}"/><circle cx="198" cy="268" r="52" fill="${accent}"/><circle cx="314" cy="268" r="52" fill="${accent}"/><circle cx="198" cy="268" r="20" fill="${detail}"/><circle cx="314" cy="268" r="20" fill="${detail}"/><path d="M256 304 L286 344 H226 Z" fill="#e9a93f"/><path d="M176 380 Q256 414 336 380" stroke="${detail}" stroke-width="12" stroke-linecap="round" fill="none"/>`,
+    fish: `<ellipse cx="246" cy="286" rx="142" ry="104" fill="${fur}"/><path d="M326 286 L422 210 V362 Z" fill="${accent}"/><path d="M224 192 L274 130 L304 212 Z" fill="${accent}"/><circle cx="188" cy="266" r="16" fill="${detail}"/><path d="M144 316 Q176 336 214 324" stroke="${detail}" stroke-width="10" stroke-linecap="round" fill="none"/>`,
+    turtle: `<ellipse cx="256" cy="278" rx="128" ry="104" fill="${fur}"/><circle cx="372" cy="272" r="40" fill="${accent}"/><circle cx="176" cy="370" r="24" fill="${accent}"/><circle cx="336" cy="370" r="24" fill="${accent}"/><circle cx="176" cy="186" r="24" fill="${accent}"/><circle cx="336" cy="186" r="24" fill="${accent}"/><path d="M196 246 H316 M216 208 V348 M296 208 V348" stroke="${detail}" stroke-width="12" opacity="0.38"/>`,
+    panda: `<circle cx="256" cy="286" r="146" fill="${fur}"/><circle cx="182" cy="164" r="44" fill="${detail}"/><circle cx="330" cy="164" r="44" fill="${detail}"/><ellipse cx="204" cy="274" rx="34" ry="42" fill="${detail}"/><ellipse cx="308" cy="274" rx="34" ry="42" fill="${detail}"/><circle cx="204" cy="274" r="14" fill="${accent}"/><circle cx="308" cy="274" r="14" fill="${accent}"/><ellipse cx="256" cy="332" rx="34" ry="24" fill="${detail}"/>`,
+    fox: `<path d="M124 166 L190 224 H144 Z" fill="${fur}"/><path d="M388 166 L368 224 H322 Z" fill="${fur}"/><circle cx="256" cy="286" r="144" fill="${fur}"/><path d="M160 354 Q256 424 352 354" fill="${accent}"/><circle cx="208" cy="268" r="16" fill="${detail}"/><circle cx="304" cy="268" r="16" fill="${detail}"/><path d="M240 320 L272 320 L256 344 Z" fill="${detail}"/>`,
+    frog: `<circle cx="256" cy="300" r="142" fill="${fur}"/><circle cx="194" cy="190" r="44" fill="${accent}"/><circle cx="318" cy="190" r="44" fill="${accent}"/><circle cx="194" cy="190" r="18" fill="${detail}"/><circle cx="318" cy="190" r="18" fill="${detail}"/><path d="M196 338 Q256 374 316 338" stroke="${detail}" stroke-width="12" stroke-linecap="round" fill="none"/>`,
+  };
+  return { id, name, emoji, type: 'source', src: buildIllustration({ background, content: shapes[kind] }) };
+}
+
+function createNatureArt({ id, name, emoji, background, body, accent, detail, kind }) {
+  const shapes = {
+    mountain: `<circle cx="396" cy="116" r="44" fill="rgba(255,255,255,0.38)"/><path d="M54 382 L182 178 L278 322 L336 232 L458 382 Z" fill="${body}"/><path d="M142 382 L238 228 L308 382 Z" fill="${accent}" opacity="0.76"/><path d="M182 178 L214 230 L250 188 L278 322" fill="none" stroke="${detail}" stroke-width="18" opacity="0.38"/>`,
+    beach: `<rect x="0" y="270" width="512" height="110" fill="${body}" opacity="0.9"/><rect x="0" y="380" width="512" height="132" fill="${accent}"/><circle cx="394" cy="114" r="52" fill="rgba(255,244,197,0.58)"/><path d="M94 404 C126 340 188 304 228 318 C200 356 172 400 164 442 Z" fill="${detail}"/><rect x="198" y="248" width="10" height="124" fill="#7a5630"/><path d="M204 258 C258 248 294 276 278 320 C246 326 216 314 204 258 Z" fill="${detail}"/>`,
+    waterfall: `<path d="M0 348 C86 320 144 336 212 324 C274 312 360 290 512 330 V512 H0 Z" fill="${body}" opacity="0.74"/><path d="M250 120 C292 136 308 184 300 234 C292 284 292 348 320 512 H214 C240 356 234 286 220 226 C206 166 214 138 250 120 Z" fill="${accent}"/><circle cx="180" cy="174" r="28" fill="rgba(255,255,255,0.16)"/><circle cx="362" cy="222" r="22" fill="rgba(255,255,255,0.16)"/>`,
+    desert: `<circle cx="392" cy="110" r="50" fill="rgba(255,225,155,0.6)"/><path d="M0 332 C74 286 154 300 252 268 C344 238 420 256 512 312 V512 H0 Z" fill="${body}"/><path d="M0 388 C86 350 154 362 240 332 C332 300 428 316 512 372 V512 H0 Z" fill="${accent}" opacity="0.92"/><rect x="130" y="238" width="14" height="148" rx="7" fill="${detail}"/><circle cx="144" cy="224" r="28" fill="${detail}"/><circle cx="116" cy="258" r="24" fill="${detail}"/><circle cx="170" cy="266" r="22" fill="${detail}"/>`,
+    forest: `<rect x="0" y="360" width="512" height="152" fill="${body}" opacity="0.52"/><path d="M108 364 L164 236 L220 364 Z" fill="${body}"/><path d="M196 364 L264 188 L332 364 Z" fill="${accent}"/><path d="M300 364 L364 230 L428 364 Z" fill="${body}"/><rect x="246" y="364" width="18" height="92" fill="${detail}"/><rect x="152" y="364" width="16" height="82" fill="${detail}"/><rect x="358" y="364" width="16" height="82" fill="${detail}"/>`,
+    lake: `<circle cx="396" cy="112" r="40" fill="rgba(255,255,255,0.42)"/><path d="M0 318 C88 290 156 298 238 272 C334 242 434 256 512 300 V512 H0 Z" fill="${body}" opacity="0.8"/><ellipse cx="268" cy="390" rx="204" ry="64" fill="${accent}" opacity="0.72"/><path d="M142 312 L216 202 L286 312 Z" fill="${detail}"/><path d="M244 312 L330 178 L412 312 Z" fill="${detail}" opacity="0.84"/>`,
+  };
+  return { id, name, emoji, type: 'source', src: buildIllustration({ background, content: shapes[kind] }) };
+}
+
+const ART_SOURCES = [
+  createFruitArt({ id: 'apple', name: 'Apple Glow', emoji: '🍎', background: ['#ffe2e2', '#ffb2b2'], body: '#e44343', accent: '#ff8585', leaf: '#4caf50', kind: 'apple' }),
+  createFruitArt({ id: 'pear', name: 'Pear Drop', emoji: '🍐', background: ['#edf9d1', '#d0f08f'], body: '#9ccc3c', accent: '#d8f57d', leaf: '#3f8f3e', kind: 'pear' }),
+  createFruitArt({ id: 'orange', name: 'Orange Burst', emoji: '🍊', background: ['#ffe5c0', '#ffc36f'], body: '#ff8a1f', accent: '#ffd08c', leaf: '#4c9b41', kind: 'orange' }),
+  createFruitArt({ id: 'lemon', name: 'Lemon Twist', emoji: '🍋', background: ['#fff5b2', '#ffe96d'], body: '#ffd438', accent: '#fff2b0', leaf: '#69a940', kind: 'lemon' }),
+  createFruitArt({ id: 'strawberry', name: 'Strawberry Pop', emoji: '🍓', background: ['#ffd4df', '#ff95b0'], body: '#ef3f69', accent: '#ffe39d', leaf: '#45a049', kind: 'strawberry' }),
+  createFruitArt({ id: 'cherries', name: 'Cherry Pair', emoji: '🍒', background: ['#ffe2ed', '#ffc1d8'], body: '#d1263d', accent: '#b40f2a', leaf: '#48a953', kind: 'cherries' }),
+  createFruitArt({ id: 'watermelon', name: 'Watermelon Slice', emoji: '🍉', background: ['#ffe2de', '#ffc0b8'], body: '#f05566', accent: '#68c05a', leaf: '#68c05a', kind: 'watermelon' }),
+  createFruitArt({ id: 'pineapple', name: 'Golden Pineapple', emoji: '🍍', background: ['#fff3b2', '#ffd46a'], body: '#f4b52f', accent: '#9b6b22', leaf: '#2fa25d', kind: 'pineapple' }),
+  createVehicleArt({ id: 'car', name: 'City Car', emoji: '🚗', background: ['#d7ecff', '#9bc8ff'], body: '#ff5c5c', accent: '#b6e2ff', trim: '#2e4f7f', kind: 'car' }),
+  createVehicleArt({ id: 'bus', name: 'Sunny Bus', emoji: '🚌', background: ['#fff0b8', '#ffd46c'], body: '#f4b000', accent: '#cce7ff', trim: '#2f3f60', kind: 'bus' }),
+  createVehicleArt({ id: 'truck', name: 'Cargo Truck', emoji: '🚚', background: ['#ececff', '#b3bdf4'], body: '#45a6f2', accent: '#5fdbb5', trim: '#2b3352', kind: 'truck' }),
+  createVehicleArt({ id: 'scooter', name: 'Cherry Scooter', emoji: '🛵', background: ['#ffe3ef', '#ffbad8'], body: '#ff5f87', accent: '#ffffff', trim: '#355070', kind: 'scooter' }),
+  createVehicleArt({ id: 'sailboat', name: 'Sailboat Bay', emoji: '⛵', background: ['#d7f1ff', '#7fc9ff'], body: '#ffffff', accent: '#ff8168', trim: '#1f6fb2', kind: 'sailboat' }),
+  createVehicleArt({ id: 'airplane', name: 'Jet Stream', emoji: '✈️', background: ['#e4f1ff', '#9fd0ff'], body: '#f6fbff', accent: '#4aa7ff', trim: '#91c7ff', kind: 'airplane' }),
+  createVehicleArt({ id: 'helicopter', name: 'Sky Patrol', emoji: '🚁', background: ['#dff2ff', '#a8d8ff'], body: '#ff6d5b', accent: '#243b6b', trim: '#cfe8ff', kind: 'helicopter' }),
+  createVehicleArt({ id: 'train', name: 'Bullet Train', emoji: '🚄', background: ['#f0f7ff', '#b4d8ff'], body: '#f7fbff', accent: '#4f9cff', trim: '#2a4273', kind: 'train' }),
+  createAnimalArt({ id: 'cat_art', name: 'Cat Portrait', emoji: '🐱', background: ['#ffe4c5', '#ffb366'], fur: '#ff9d2f', accent: '#ffd6a0', detail: '#3a2b25', kind: 'cat' }),
+  createAnimalArt({ id: 'dog_art', name: 'Puppy Portrait', emoji: '🐶', background: ['#f8ead2', '#e1b67a'], fur: '#d39a57', accent: '#8a5a2f', detail: '#2c221c', kind: 'dog' }),
+  createAnimalArt({ id: 'owl_art', name: 'Owl Gaze', emoji: '🦉', background: ['#dce8ff', '#9bbcff'], fur: '#8b5d3d', accent: '#f9f1df', detail: '#2d2321', kind: 'owl' }),
+  createAnimalArt({ id: 'fish_art', name: 'Coral Fish', emoji: '🐠', background: ['#d8f8ff', '#6fd4e6'], fur: '#ff9e3d', accent: '#fff2a8', detail: '#2a4252', kind: 'fish' }),
+  createAnimalArt({ id: 'turtle_art', name: 'Sea Turtle', emoji: '🐢', background: ['#d6fff1', '#6fe0bf'], fur: '#4d9861', accent: '#87c97b', detail: '#274a34', kind: 'turtle' }),
+  createAnimalArt({ id: 'panda_art', name: 'Panda Smile', emoji: '🐼', background: ['#f1f4f8', '#cfd9e4'], fur: '#f7f7f7', accent: '#1c1d21', detail: '#101114', kind: 'panda' }),
+  createAnimalArt({ id: 'fox_art', name: 'Forest Fox', emoji: '🦊', background: ['#ffe3c2', '#ffb16d'], fur: '#f47d31', accent: '#fff0df', detail: '#2e211a', kind: 'fox' }),
+  createAnimalArt({ id: 'frog_art', name: 'Frog Friend', emoji: '🐸', background: ['#e0ffd8', '#98eb7d'], fur: '#59c24a', accent: '#dfffd2', detail: '#23311f', kind: 'frog' }),
+  createNatureArt({ id: 'mountain_art', name: 'Mountain Glow', emoji: '⛰️', background: ['#b8ddff', '#e9f5ff'], body: '#5d7ca4', accent: '#7f9cd1', detail: '#ffffff', kind: 'mountain' }),
+  createNatureArt({ id: 'beach_art', name: 'Palm Beach', emoji: '🏖️', background: ['#8ad8ff', '#ffe7a6'], body: '#5dbde8', accent: '#f6d28c', detail: '#2f9d57', kind: 'beach' }),
+  createNatureArt({ id: 'waterfall_art', name: 'Waterfall Mist', emoji: '💧', background: ['#d8efff', '#88c7ff'], body: '#3f8464', accent: '#9fe5ff', detail: '#d4f4ff', kind: 'waterfall' }),
+  createNatureArt({ id: 'desert_art', name: 'Desert Dunes', emoji: '🏜️', background: ['#ffd9a0', '#ffb669'], body: '#db9d46', accent: '#efc171', detail: '#3b8e48', kind: 'desert' }),
+  createNatureArt({ id: 'forest_art', name: 'Pine Forest', emoji: '🌲', background: ['#d6f7d6', '#85d685'], body: '#3d8b4f', accent: '#256f3f', detail: '#6a4630', kind: 'forest' }),
+  createNatureArt({ id: 'lake_art', name: 'Moonlit Lake', emoji: '🌙', background: ['#1f3566', '#5c7ac9'], body: '#263d7a', accent: '#6aa7ff', detail: '#dbe8ff', kind: 'lake' }),
+];
+
+// Built-in hand-authored puzzles are retired in favor of generated challenges.
+PUZZLES.length = 0;
+
 // ═══════════════════════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════════════════════
@@ -2906,6 +3206,11 @@ let currentPuzzle = null;
 let filled = [];          // parallel to data: which cells are user-filled
 let selectedColor = 1;    // palette index (1-based)
 let currentTool = 'paint';
+const generatedPuzzleCache = new Map();
+let pendingPhotoFile = null;
+let pendingSourceChallenge = null;
+let pendingPreviewUrl = null;
+let selectedDifficultyIndex = 1;
 
 // viewport transform
 let scale = 1;
@@ -2937,31 +3242,20 @@ function scaledCell() { return CELL * scale; }
 //  GALLERY
 // ═══════════════════════════════════════════════════════════
 
-let currentLevel = 'all';
-
-function setLevel(level) {
-  currentLevel = level;
-  document.querySelectorAll('.level-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.level === level)
-  );
-  renderGallery();
-}
-
-const LEVEL_LABEL = { easy: '⭐', medium: '⭐⭐', hard: '⭐⭐⭐' };
-
 function renderGallery() {
   const grid = document.getElementById('gallery-grid');
   grid.innerHTML = '';
 
-  // Filter: photos always shown; built-in filtered by level
-  const list = PUZZLES.filter(p =>
-    currentLevel === 'all' || p.isPhoto || p.level === currentLevel
-  );
+  const list = [
+    ...ART_SOURCES,
+    ...PUZZLES.filter(p => p.isPhoto),
+  ];
 
   list.forEach(p => {
+    const isSource = p.type === 'source';
     const card = document.createElement('div');
-    card.className = 'puzzle-card' + (p.isPhoto ? ' photo-puzzle-card' : '');
-    card.onclick = () => startPuzzle(p.id);
+    card.className = 'puzzle-card' + (p.isPhoto ? ' photo-puzzle-card' : '') + (isSource ? ' source-card' : '');
+    card.onclick = () => isSource ? openSourceChallenge(p) : startPuzzle(p.id);
 
     if (p.isPhoto) {
       const del = document.createElement('button');
@@ -2973,14 +3267,26 @@ function renderGallery() {
 
     const thumb = document.createElement('div');
     thumb.className = 'card-thumb';
-    const thumbCanvas = document.createElement('canvas');
-    thumbCanvas.width = p.cols;
-    thumbCanvas.height = p.rows;
-    drawPuzzleToCanvas(thumbCanvas, p, saveData[p.id]);
-    thumb.appendChild(thumbCanvas);
+    if (isSource) {
+      const badge = document.createElement('div');
+      badge.className = 'source-badge';
+      badge.textContent = 'Any difficulty';
+      card.appendChild(badge);
+
+      const img = document.createElement('img');
+      img.src = p.src;
+      img.alt = p.name;
+      thumb.appendChild(img);
+    } else {
+      const thumbCanvas = document.createElement('canvas');
+      thumbCanvas.width = p.cols;
+      thumbCanvas.height = p.rows;
+      drawPuzzleToCanvas(thumbCanvas, p, saveData[p.id]);
+      thumb.appendChild(thumbCanvas);
+    }
     card.appendChild(thumb);
 
-    const pct = getProgress(p, saveData[p.id]);
+    const pct = isSource ? getSourceProgress(p) : getProgress(p, saveData[p.id]);
     const info = document.createElement('div');
     info.className = 'puzzle-card-info';
     info.innerHTML = `
@@ -3018,18 +3324,109 @@ function getProgress(puzzle, savedFilled) {
   return Math.round((done / total) * 100);
 }
 
+function makeGeneratedPuzzleId(sourceId, level) {
+  return `source_${sourceId}_${level}`;
+}
+
+function getSourceProgress(source) {
+  let best = 0;
+  DIFFICULTY_ORDER.forEach(level => {
+    const saved = saveData[makeGeneratedPuzzleId(source.id, level)];
+    if (!saved || saved.length === 0) return;
+    const pct = Math.round((saved.filter(Boolean).length / saved.length) * 100);
+    if (pct > best) best = pct;
+  });
+  return best;
+}
+
+function renderPixelCompletion(canvas, puzzle) {
+  const { cols, rows, data, palette } = puzzle;
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, canvas.width, canvas.height);
+
+  data.forEach((ci, i) => {
+    if (ci === 0) return;
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const x = Math.round(col * canvas.width / cols);
+    const y = Math.round(row * canvas.height / rows);
+    const w = Math.round((col + 1) * canvas.width / cols) - x;
+    const h = Math.round((row + 1) * canvas.height / rows) - y;
+    c.fillStyle = palette[ci];
+    c.fillRect(x, y, w, h);
+  });
+}
+
+function renderSmoothedCompletion(canvas, puzzle) {
+  const { cols, rows, data, palette } = puzzle;
+  const c = canvas.getContext('2d');
+  c.clearRect(0, 0, canvas.width, canvas.height);
+
+  const cellW = canvas.width / cols;
+  const cellH = canvas.height / rows;
+  const radius = Math.min(cellW, cellH) * 0.62;
+  const bridge = radius * 0.78;
+
+  const getCell = (col, row) => {
+    if (col < 0 || col >= cols || row < 0 || row >= rows) return 0;
+    return data[row * cols + col];
+  };
+
+  data.forEach((ci, i) => {
+    if (ci === 0) return;
+
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = (col + 0.5) * cellW;
+    const cy = (row + 0.5) * cellH;
+
+    c.fillStyle = palette[ci];
+    c.beginPath();
+    c.arc(cx, cy, radius, 0, Math.PI * 2);
+    c.fill();
+
+    if (getCell(col, row - 1) === ci) {
+      c.fillRect(cx - bridge, cy - bridge, bridge * 2, bridge);
+    }
+    if (getCell(col + 1, row) === ci) {
+      c.fillRect(cx, cy - bridge, bridge, bridge * 2);
+    }
+    if (getCell(col, row + 1) === ci) {
+      c.fillRect(cx - bridge, cy, bridge * 2, bridge);
+    }
+    if (getCell(col - 1, row) === ci) {
+      c.fillRect(cx - bridge, cy - bridge, bridge, bridge * 2);
+    }
+  });
+}
+
+function renderCompletionImage(canvas, puzzle) {
+  if (puzzle.completionStyle === 'smooth') {
+    renderSmoothedCompletion(canvas, puzzle);
+    canvas.classList.add('smoothed-preview');
+  } else {
+    renderPixelCompletion(canvas, puzzle);
+    canvas.classList.remove('smoothed-preview');
+  }
+}
+
 // ═══════════════════════════════════════════════════════════
 //  START / LOAD PUZZLE
 // ═══════════════════════════════════════════════════════════
 
 function startPuzzle(id) {
-  currentPuzzle = PUZZLES.find(p => p.id === id);
-  if (!currentPuzzle) return;
+  const puzzle = PUZZLES.find(p => p.id === id) || generatedPuzzleCache.get(id);
+  if (!puzzle) return;
+  loadPuzzle(puzzle);
+}
+
+function loadPuzzle(puzzle) {
+  currentPuzzle = puzzle;
 
   // load saved progress or fresh
-  filled = saveData[id]
-    ? [...saveData[id]]
-    : new Array(currentPuzzle.data.length).fill(false);
+  filled = saveData[puzzle.id]
+    ? [...saveData[puzzle.id]]
+    : new Array(puzzle.data.length).fill(false);
 
   undoStack = [];
   selectedColor = 1;
@@ -3444,23 +3841,11 @@ function showComplete() {
 
   // draw completion image
   const cc = document.getElementById('complete-canvas');
-  const { cols, rows, data, palette } = currentPuzzle;
+  const { cols, rows } = currentPuzzle;
   const size = 160;
   cc.width = size;
   cc.height = Math.round(size * rows / cols);
-  const c = cc.getContext('2d');
-  c.clearRect(0, 0, cc.width, cc.height);
-  data.forEach((ci, i) => {
-    if (ci === 0) return;
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = Math.round(col * cc.width / cols);
-    const y = Math.round(row * cc.height / rows);
-    const w = Math.round((col + 1) * cc.width / cols) - x;
-    const h = Math.round((row + 1) * cc.height / rows) - y;
-    c.fillStyle = palette[ci];
-    c.fillRect(x, y, w, h);
-  });
+  renderCompletionImage(cc, currentPuzzle);
 
   // show time
   document.getElementById('complete-time-badge').textContent = '⏱ ' + formatTime(elapsedSeconds);
@@ -3482,11 +3867,34 @@ function closeComplete() {
   document.getElementById('complete-overlay').classList.remove('show');
 }
 
+function restartCurrentPuzzle() {
+  if (!currentPuzzle) return;
+  delete saveData[currentPuzzle.id];
+  localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  closeComplete();
+  loadPuzzle(currentPuzzle);
+}
+
 function goGallery() {
   closeComplete();
   showScreen('gallery-screen');
   renderGallery();
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+
+  const completeOpen = document.getElementById('complete-overlay').classList.contains('show');
+  if (completeOpen) {
+    closeComplete();
+    return;
+  }
+
+  const difficultyOpen = document.getElementById('difficulty-modal').classList.contains('show');
+  if (difficultyOpen) {
+    closeDifficultyModal();
+  }
+});
 
 // ═══════════════════════════════════════════════════════════
 //  TOOLS
@@ -3545,105 +3953,252 @@ function deletePhotoPuzzle(id) {
   renderGallery();
 }
 
-// Wire up the file input
-let pendingPhotoFile = null;
-
-document.getElementById('photo-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  e.target.value = ''; // reset so same file can be picked again
-  if (file) {
-    pendingPhotoFile = file;
-    document.getElementById('difficulty-modal').classList.add('show');
+function clearDifficultyPreview() {
+  if (pendingPreviewUrl && pendingPreviewUrl.startsWith('blob:')) {
+    URL.revokeObjectURL(pendingPreviewUrl);
   }
-});
+  pendingPreviewUrl = null;
+  document.getElementById('difficulty-preview-wrap').style.display = 'none';
+  document.getElementById('difficulty-preview-image').src = '';
+  document.getElementById('difficulty-preview-caption').textContent = '';
+  const previewCanvas = document.getElementById('difficulty-preview-canvas');
+  const previewCtx = previewCanvas.getContext('2d');
+  previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+}
 
-const PHOTO_DIFFICULTY = {
-  easy:     { grid: 12,  colors: 5   },
-  medium:   { grid: 22,  colors: 7   },
-  hard:     { grid: 36,  colors: 10  },
-  expert:   { grid: 48,  colors: 14  },
-  extreme:  { grid: 64,  colors: 64  },
-  hardcore: { grid: 80,  colors: 128 },
-};
+function openDifficultyModal({ title, subtitle, previewSrc, previewCaption, source, file }) {
+  pendingSourceChallenge = source || null;
+  pendingPhotoFile = file || null;
+  clearDifficultyPreview();
 
-function startPhotoWithDifficulty(level) {
-  document.getElementById('difficulty-modal').classList.remove('show');
-  const { grid, colors } = PHOTO_DIFFICULTY[level];
-  if (pendingPhotoFile) processPhoto(pendingPhotoFile, grid, colors);
-  pendingPhotoFile = null;
+  document.getElementById('difficulty-title').textContent = title;
+  document.getElementById('difficulty-subtitle').textContent = subtitle;
+
+  if (previewSrc) {
+    pendingPreviewUrl = previewSrc;
+    document.getElementById('difficulty-preview-image').src = previewSrc;
+    document.getElementById('difficulty-preview-caption').textContent = previewCaption || '';
+    document.getElementById('difficulty-preview-wrap').style.display = 'block';
+  }
+
+  selectedDifficultyIndex = 1;
+  const slider = document.getElementById('difficulty-slider');
+  slider.value = String(selectedDifficultyIndex);
+  updateDifficultySelection();
+  document.getElementById('difficulty-modal').classList.add('show');
 }
 
 function closeDifficultyModal() {
   document.getElementById('difficulty-modal').classList.remove('show');
   pendingPhotoFile = null;
+  pendingSourceChallenge = null;
+  clearDifficultyPreview();
 }
 
-function processPhoto(file, maxGrid, numColors) {
+function openSourceChallenge(source) {
+  openDifficultyModal({
+    title: `${source.emoji} ${source.name}`,
+    subtitle: 'Pick a difficulty for this image.',
+    previewSrc: source.src,
+    previewCaption: 'The puzzle will be generated from this illustration at the selected grid size.',
+    source,
+  });
+}
+
+function getSelectedDifficultyLevel() {
+  return DIFFICULTY_ORDER[selectedDifficultyIndex] || 'medium';
+}
+
+function updateDifficultySelection() {
+  const slider = document.getElementById('difficulty-slider');
+  selectedDifficultyIndex = Number(slider.value);
+  const level = getSelectedDifficultyLevel();
+  const config = DIFFICULTY_OPTIONS[level];
+
+  document.getElementById('difficulty-current-stars').textContent = config.stars;
+  document.getElementById('difficulty-current-label').textContent = config.label;
+  document.getElementById('difficulty-current-meta').textContent = `${config.grid} px grid · ${config.colors} colors`;
+
+  const ticks = Array.from(document.querySelectorAll('#difficulty-ticks span'));
+  ticks.forEach((tick, idx) => tick.classList.toggle('active', idx === selectedDifficultyIndex));
+
+  renderDifficultyPreview(level);
+}
+
+function renderDifficultyPreview(level) {
+  const previewImage = document.getElementById('difficulty-preview-image');
+  const canvas = document.getElementById('difficulty-preview-canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!previewImage.src || !previewImage.complete || previewImage.naturalWidth === 0) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  const puzzle = buildPuzzleFromImage(previewImage, {
+    id: 'preview',
+    name: 'Preview',
+    emoji: '',
+    level,
+    numColors: DIFFICULTY_OPTIONS[level].colors,
+    maxGrid: DIFFICULTY_OPTIONS[level].grid,
+  });
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const scale = Math.min(canvas.width / puzzle.cols, canvas.height / puzzle.rows);
+  const drawW = puzzle.cols * scale;
+  const drawH = puzzle.rows * scale;
+  const offsetX = (canvas.width - drawW) / 2;
+  const offsetY = (canvas.height - drawH) / 2;
+
+  puzzle.data.forEach((colorIdx, i) => {
+    if (colorIdx === 0) return;
+    const x = offsetX + (i % puzzle.cols) * scale;
+    const y = offsetY + Math.floor(i / puzzle.cols) * scale;
+    ctx.fillStyle = puzzle.palette[colorIdx];
+    ctx.fillRect(x, y, Math.ceil(scale), Math.ceil(scale));
+  });
+}
+
+function chooseDifficulty(level = getSelectedDifficultyLevel()) {
+  document.getElementById('difficulty-modal').classList.remove('show');
+  if (pendingPhotoFile) {
+    const file = pendingPhotoFile;
+    pendingPhotoFile = null;
+    pendingSourceChallenge = null;
+    clearDifficultyPreview();
+    processPhoto(file, level);
+    return;
+  }
+  if (pendingSourceChallenge) {
+    const source = pendingSourceChallenge;
+    pendingPhotoFile = null;
+    pendingSourceChallenge = null;
+    clearDifficultyPreview();
+    startGeneratedSource(source, level);
+  }
+}
+
+document.getElementById('photo-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const previewUrl = URL.createObjectURL(file);
+  openDifficultyModal({
+    title: '📷 Choose Difficulty',
+    subtitle: 'How detailed should your pixel art be?',
+    previewSrc: previewUrl,
+    previewCaption: 'Your uploaded photo will be resized and quantized into a playable puzzle.',
+    file,
+  });
+});
+
+document.getElementById('difficulty-preview-image').addEventListener('load', () => {
+  updateDifficultySelection();
+});
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function buildPuzzleFromImage(img, { id, name, emoji, level, numColors, maxGrid, isPhoto = false }) {
+  const aspect = img.naturalWidth / img.naturalHeight;
+  let cols, rows;
+  if (aspect >= 1) {
+    cols = maxGrid;
+    rows = Math.max(4, Math.round(maxGrid / aspect));
+  } else {
+    rows = maxGrid;
+    cols = Math.max(4, Math.round(maxGrid * aspect));
+  }
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = cols;
+  offscreen.height = rows;
+  const c = offscreen.getContext('2d');
+  c.drawImage(img, 0, 0, cols, rows);
+
+  const imageData = c.getImageData(0, 0, cols, rows).data;
+  const pixels = [];
+  for (let i = 0; i < imageData.length; i += 4) {
+    pixels.push([imageData[i], imageData[i + 1], imageData[i + 2]]);
+  }
+
+  const centroids = kMeansPlusPlus(pixels, numColors);
+  const data = pixels.map(px => nearestIdx(px, centroids) + 1);
+
+  return {
+    id,
+    name,
+    emoji,
+    level,
+    isPhoto,
+    cols,
+    rows,
+    palette: [null, ...centroids.map(rgbToHex)],
+    data,
+  };
+}
+
+async function startGeneratedSource(source, level) {
   const overlay = document.getElementById('processing-overlay');
   overlay.classList.add('show');
+  try {
+    const { grid, colors, label } = DIFFICULTY_OPTIONS[level];
+    const img = await loadImage(source.src);
+    const puzzleId = makeGeneratedPuzzleId(source.id, level);
+    const puzzle = buildPuzzleFromImage(img, {
+      id: puzzleId,
+      name: `${source.name} (${label})`,
+      emoji: source.emoji,
+      level,
+      numColors: colors,
+      maxGrid: grid,
+    });
+    generatedPuzzleCache.set(puzzleId, puzzle);
+    loadPuzzle(puzzle);
+  } catch (e) {
+    console.error(e);
+    alert('Could not generate this puzzle. Please try again.');
+  } finally {
+    overlay.classList.remove('show');
+  }
+}
 
-  const img = new Image();
+async function processPhoto(file, level) {
+  const overlay = document.getElementById('processing-overlay');
+  overlay.classList.add('show');
   const url = URL.createObjectURL(file);
-
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-
-    // ── 1. Resize to grid ──────────────────────────
-    const aspect = img.naturalWidth / img.naturalHeight;
-    let cols, rows;
-    if (aspect >= 1) {
-      cols = maxGrid;
-      rows = Math.max(4, Math.round(maxGrid / aspect));
-    } else {
-      rows = maxGrid;
-      cols = Math.max(4, Math.round(maxGrid * aspect));
-    }
-
-    const offscreen = document.createElement('canvas');
-    offscreen.width = cols;
-    offscreen.height = rows;
-    const c = offscreen.getContext('2d');
-    c.drawImage(img, 0, 0, cols, rows);
-
-    // ── 2. Extract pixels ──────────────────────────
-    const imageData = c.getImageData(0, 0, cols, rows).data;
-    const pixels = [];
-    for (let i = 0; i < imageData.length; i += 4) {
-      pixels.push([imageData[i], imageData[i + 1], imageData[i + 2]]);
-    }
-
-    // ── 3. K-means quantization ────────────────────
-    const centroids = kMeansPlusPlus(pixels, numColors);
-
-    // ── 4. Map pixels → palette indices (1-based) ──
-    const data = pixels.map(px => nearestIdx(px, centroids) + 1);
-
-    // ── 5. Build puzzle ────────────────────────────
-    const puzzle = {
+  try {
+    const { grid, colors } = DIFFICULTY_OPTIONS[level];
+    const img = await loadImage(url);
+    const puzzle = buildPuzzleFromImage(img, {
       id: 'photo_' + Date.now(),
-      name: 'My Photo',
+      name: `My Photo (${DIFFICULTY_OPTIONS[level].label})`,
       emoji: '📷',
+      level,
+      numColors: colors,
+      maxGrid: grid,
       isPhoto: true,
-      cols,
-      rows,
-      palette: [null, ...centroids.map(rgbToHex)],
-      data,
-    };
-
+    });
     PUZZLES.unshift(puzzle);
     savePhotoPuzzles();
-
-    overlay.classList.remove('show');
-    startPuzzle(puzzle.id);
-  };
-
-  img.onerror = () => {
+    loadPuzzle(puzzle);
+  } catch (e) {
+    console.error(e);
+    alert('Could not load image. Please try another.');
+  } finally {
     URL.revokeObjectURL(url);
     overlay.classList.remove('show');
-    alert('Could not load image. Please try another.');
-  };
-
-  img.src = url;
+  }
 }
 
 // ── K-Means++ initialization + clustering ─────────────────
